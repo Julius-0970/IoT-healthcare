@@ -6,5 +6,5 @@ router = APIRouter()
 
 # 센서 데이터 접근 경로 /api/sensor_data
 @router.get("/sensor_data")
-async def get_sensor_data():
-    return {"message": "센서 데이터가 여기에 표시됩니다."}
+async def receive_sensor_data(sensor_data: SensorData):
+    return {"message": "센서 데이터가 성공적으로 수신 되었다..."}
