@@ -14,6 +14,6 @@ class SensorData(BaseModel):
     bpm: int              # 심박수 측정값
 
 class DeviceData(BaseModel):
-    device_id: str #지정된 장비 번호
-    device_ip: str #헬스케어 장비의 고정 ip
-    patient_id: str #회원가입한 사용자(환자)의 ID
+    device_id: str   #지정된 장비 번호
+    device_ip: str   #헬스케어 장비의 고정 ip
+    patient_id: str  #회원가입한 사용자(환자)의 ID
