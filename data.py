@@ -12,3 +12,8 @@ class SensorData(BaseModel):
     inbp_diastolic: int   # 혈압 이완기 측정값
     spO2: int             # 혈당(%) 측정값
     bpm: int              # 심박수 측정값
+
+class DeviceData(BaseModel):
+    device_id: str #지정된 장비 번호
+    device_ip: str #헬스케어 장비의 고정 ip
+    patient_id: str #회원가입한 사용자(환자)의 ID
