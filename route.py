@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from model import SensorData # model.py의 SensoData class 참조
+from data import SensorData # data.py의 SensoData class 참조
 # /api 경로로 묶어서, 한번에 경로 관리를 진행, main.py에 보내서 파일을 나눠서 저장 및 관리가 편함
 router = APIRouter()
 
