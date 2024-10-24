@@ -9,7 +9,7 @@ class SensorData(BaseModel):
 
     body_temp: int        # 체온 측정값
     nibp_systolic: int    # 혈압 수축기 측정값
-    inbp_diastolic: int   # 혈압 이완기 측정값
+    nibp_diastolic: int   # 혈압 이완기 측정값
     spO2: int             # 혈당(%) 측정값
     bpm: int              # 심박수 측정값
 
