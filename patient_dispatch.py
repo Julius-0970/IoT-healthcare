@@ -4,7 +4,7 @@ from fastapi import FastAPI, APIRouter
 from pydantic import BaseModel
 import requests
 
-router = APIRouter()
+router1 = APIRouter()
 
 # 데이터 형식
 class DeviceData(BaseModel):
