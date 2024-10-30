@@ -21,4 +21,5 @@ async def post_body_temp(data: TemperatureData):
 @temp_router.get("/body_temp")
 async def get_body_temp():
     # 저장된 모든 온도 데이터를 반환
-    return {"temperature_data": temperature_data_list}
+    return {"message": "데이터 값이..", "temperature_data": temperature_data_list}
+
