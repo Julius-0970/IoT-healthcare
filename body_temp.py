@@ -3,6 +3,10 @@ from pydantic import BaseModel
 from collections import deque
 import logging 
 
+#로그 설정
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 
 temp_router = APIRouter()
 
