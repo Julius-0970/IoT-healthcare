@@ -2,10 +2,6 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 from collections import deque
 
-# 데이터 모델 정의 : 값을 넘겨줄때, str값으로만 보낼 수 있기에 str로 받음.
-class TemperatureData(BaseModel):
-    body_temp: str
-
 temp_router = APIRouter()
 
 # 큐를 사용하여 body_temp 데이터를 저장
@@ -33,13 +29,11 @@ async def body_temp_websocket(websocket: WebSocket):
     try:
         while True:
             # 클라이언트로부터 메시지를 기다림 - int변환은 백엔드에서 진행.
-            data = await websocket.receive_text()
-            # 수신한 데이터를 TemperatureData 모델로 변환
-            temp_data = TemperatureData(body_temp = data)
+            temp_data = await websocket.receive_text()
             # 큐에 저장
-            temperature_data_queue.append(temp_data.body_temp)
+            temperature_data_queue.append(temp_data)
             # 보내기전 대기상태
-            await websocket.send_text(temp_data.body_temp)
+            await websocket.send_text(temp_data)
     except WebSocketDisconnect :
         print("WebSocket disconnected")
     except Exception as e :
