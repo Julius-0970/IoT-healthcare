@@ -23,7 +23,7 @@ async def get_body_temp():
 
 
 # WebSocket을 통한 온도 데이터 수신
-@temp_router.websocket("ws/body_temp")
+@temp_router.websocket("/ws/body_temp")
 async def body_temp_websocket(websocket: WebSocket):
     await websocket.accept()
     try:
