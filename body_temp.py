@@ -43,7 +43,7 @@ async def body_temp_websocket(websocket: WebSocket):
             # 보내기전 대기상태
             await websocket.send_text(temp_data)
     except WebSocketDisconnect :
-        print("WebSocket disconnected")
+        logger.info("WebSocket disconnected")
     except Exception as e :
-        print(f"ERROR : {e}")
+        logger.error(f"ERROR: {e}")
         
