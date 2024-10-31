@@ -1,28 +1,28 @@
-// WebSocket 서버에 연결하기 위해 WebSocket 객체 생성
-const socket_temp = new WebSocket("wss://port-0-iot-healthcare-1272llwukgaeg.sel5.cloudtype.app/ws/body_temp");
+// 웹소켓 연결
+const socket = new WebSocket('wss://port-0-iot-healthcare-1272llwukgaeg.sel5.cloudtype.app/ws/body_temp');
 
-// WebSocket 연결이 성공적으로 열리면 실행되는 함수
+// 웹소켓 연결 성공 시
 socket.onopen = () => {
-    // 연결 상태를 사용자에게 알림
-    document.getElementById("status").innerText = "Connected to WebSocket";
-    // 콘솔에 연결 성공 메시지 출력
-    console.log("WebSocket connection opened."); 
+    console.log('WebSocket connection established');
 };
 
-// 서버로부터 메시지를 받을 때 실행되는 함수
+// 메시지를 수신했을 때
 socket.onmessage = (event) => {
-    // 수신된 데이터 가져오기
-    const receivedData = event.data;
-    // 수신된 데이터를 웹 페이지에 출력
-    document.getElementById("receivedData").innerText = `Received data: ${receivedData}`;
-    // 콘솔에 수신된 데이터 출력
-    console.log("Received data:", receivedData); 
+    // event.data에서 "Sent temperature: " 이후의 값만 추출
+    const message = event.data;
+    const tempData = message.replace('Sent temperature: ', ''); // "Sent temperature: " 제거
+    console.log(`Received temperature: ${tempData}`);
+    
+    // 온도 데이터를 화면에 출력하는 코드 추가 (예: HTML 요소에 삽입)
+    document.getElementById('temperatureDisplay').innerText = `Current Temperature: ${tempData} °C`;
 };
 
-// WebSocket 연결이 종료되면 실행되는 함수
+// 웹소켓 연결 종료 시
 socket.onclose = () => {
-    // 연결 종료 상태를 사용자에게 알림
-    document.getElementById("status").innerText = "WebSocket connection closed";
-    // 콘솔에 연결 종료 메시지 출력
-    console.log("WebSocket connection closed."); 
+    console.log('WebSocket connection closed');
+};
+
+// 에러 발생 시
+socket.onerror = (error) => {
+    console.error('WebSocket error:', error);
 };
