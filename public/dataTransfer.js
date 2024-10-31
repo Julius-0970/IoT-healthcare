@@ -1,5 +1,5 @@
 // WebSocket 서버에 연결하기 위해 WebSocket 객체 생성
-const socket_temp = new WebSocket("wss://port-0-iot-healthcare-1272llwukgaeg.sel5.cloudtype.app//ws/body_temp");
+const socket_temp = new WebSocket("wss://port-0-iot-healthcare-1272llwukgaeg.sel5.cloudtype.app/ws/body_temp");
 
 // WebSocket 연결이 성공적으로 열리면 실행되는 함수
 socket.onopen = () => {
