@@ -37,5 +37,5 @@ async def body_temp_websocket(websocket: WebSocket):
     except WebSocketDisconnect :
         print("WebSocket disconnected")
     except Exception as e :
-        print(f"ERROR" : {e}")
+        print(f"ERROR : {e}")
         
