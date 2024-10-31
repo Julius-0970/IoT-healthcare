@@ -32,6 +32,8 @@ async def body_temp_websocket(websocket: WebSocket):
             temp_data = await websocket.receive_text()
             # 큐에 저장
             temperature_data_queue.append(temp_data)
+            # 로그에 수신된 데이터 출력
+            logger.info(f"Received temperature data: {temp_data}")  # 데이터 출력
             # 보내기전 대기상태
             await websocket.send_text(temp_data)
     except WebSocketDisconnect :
