@@ -17,5 +17,3 @@ app.include_router(temp_router) # body_temp API 루트 경로 설정
 @app.get("/")
 async def read_root():
     return {"message": "Welcome to the main API!"}
-  
-# app.mount("/static", StaticFiles(directory="public", html = True), name="static") # HTML 파일에 접근(접근 경로는 GIT 내부 디렉토리)_정적파일 접근
