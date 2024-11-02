@@ -9,7 +9,7 @@ ecg_router = APIRouter()
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO)  # INFO 레벨의 로그 메시지를 출력하도록 설정
-logger = logging.getLogger(__name__)  # 현재 모듈의 로거 인스턴스 생성
+logger = logging.getLogger("ecg_logger")  # 현재 모듈의 로거 인스턴스 생성
 
 # ECG 데이터를 실시간으로 송수신하기 위한 큐(데크) 생성
 # 최대 416개의 최신 데이터만 저장하며, 초과 시 가장 오래된 데이터가 삭제됨
