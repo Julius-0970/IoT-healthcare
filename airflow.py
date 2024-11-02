@@ -43,5 +43,4 @@ async def websocket_airflow(websocket: WebSocket):
 async def get_airflow():
     if not airflow_data_queue:  # 데이터가 비어있는 경우
         return {"message": "No AIRFLOW data available."}  # 데이터가 없을 경우 메시지 반환
-
     return {"message": "AIRFLOW 서버 연결 완!", "AIRFLOW_DATA": list(airflow_data_queue)}  # 데이터가 있을 경우 메시지와 AIRFLOW 데이터 반환
