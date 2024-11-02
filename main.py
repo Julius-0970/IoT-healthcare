@@ -23,7 +23,6 @@ app.include_router(ecg_router) # ECG API 루트 경로 설정
 app.include_router(eog_router) # EOG API 루트 경로 설정
 app.include_router(emg_router) # EMG API 루트 경로 설정
 app.include_router(gsr_router) # GSR API 루트 경로 설정
-
 app.include_router(airflow_router) # airflow API 루트 경로 설정
 app.include_router(nibp_router) # NIBP API 루트 경로 설정
 app.include_router(spo2_router) # spO2 API 루트 경로 설정
