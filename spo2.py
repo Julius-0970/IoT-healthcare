@@ -43,4 +43,4 @@ async def websocket_spo2(websocket: WebSocket):
 async def get_spo2():
     if not spo2_data_queue:  # 데이터가 비어있는 경우
         return {"message": "No spO2 data available."}  # 데이터가 없을 경우 메시지 반환
-    return {"message": "spO2 서버 연결 완!", "spO2_DATA": list(spo2_data_queue)}  # 데이터가 있을 경우 메시지와 AIRFLOW 데이터 반환
+    return {"message": "spO2 서버 연결 완!", "spO2_DATA": list(spo2_data_queue)}  # 데이터가 있을 경우 메시지와 spO2 데이터 반환
