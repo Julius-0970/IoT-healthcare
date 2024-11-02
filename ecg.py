@@ -43,4 +43,4 @@ async def websocket_ecg(websocket: WebSocket):
 async def get_ecg():
     if not ecg_data_queue:  # 데이터가 비어있는 경우
         return {"message": "No ECG data available."}  # 데이터가 없을 경우 메시지 반환
-    return {"message": "ECG 서버 연결 완!", "ECG_DATA": list(ecg_data_queue)}  # 데이터가 있을 경우 메시지와 AIRFLOW 데이터 반환
+    return {"message": "ECG 서버 연결 완!", "ECG_DATA": list(ecg_data_queue)}  # 데이터가 있을 경우 메시지와 ECG 데이터 반환
