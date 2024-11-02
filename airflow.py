@@ -43,5 +43,5 @@ async def websocket_airflow(websocket: WebSocket):
 async def get_airflow():
     return {
         "message": "AIRFLOW 서버 연결 완!",  # 성공 메시지
-        "AIRFLOW_DATA": list(gsr_data_queue)  # 현재 저장된 AIRFLOW 데이터 리스트 반환
+        "AIRFLOW_DATA": list(airflow_data_queue)  # 현재 저장된 AIRFLOW 데이터 리스트 반환
     }
