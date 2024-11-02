@@ -39,7 +39,7 @@ async def websocket_ecg(websocket: WebSocket):
         logger.error(f"ERROR in ECG WebSocket: {e}")  # 에러 로그 출력
 
 # ECG 데이터를 조회하기 위한 HTTP GET 엔드포인트
-ㄴ@ecg_router.get("/ecg")
+@ecg_router.get("/ecg")
 async def get_ecg():
     return {
         "message": "ECG 서버 연결 완!",  # 성공 메시지
