@@ -37,9 +37,9 @@ async def websocket_emg(websocket: WebSocket):
         logger.error(f"ERROR in EMG WebSocket: {e}")  # 에러 로그 출력
 
 # EMG 데이터를 조회하기 위한 HTTP GET 엔드포인트
-@emg_router.get("/emg")  # 변경: ecg_router -> emg_router
+@emg_router.get("/emg")  
 async def get_emg():
-    return {
-        "message": "EMG 서버 연결 완!",  # 성공 메시지
-        "EMG_DATA": list(emg_data_queue)  # 현재 저장된 EMG 데이터 리스트 반환
-    }
+    if not emg_data_queue:  # 데이터가 비어있는 경우
+        return {"message": "No EMG data available."}  # 데이터가 없을 경우 메시지 반환
+    return {"message": "EMG 서버 연결 완!", "EMG_DATA": list(emg_data_queue)}  # 데이터가 있을 경우 메시지와 EMG 데이터 반환
+
