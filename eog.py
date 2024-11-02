@@ -39,9 +39,9 @@ async def websocket_eog(websocket: WebSocket):
         logger.error(f"ERROR in EOG WebSocket: {e}")  # 에러 로그 출력
 
 # EOG 데이터를 조회하기 위한 HTTP GET 엔드포인트
-@eog_router.get("/eog")
+@eog_router.get("/eog")  
 async def get_eog():
-    return {
-        "message": "EOG 서버 연결 완료라능!",  # 성공 메시지
-        "EOG_DATA": list(eog_data_queue)  # 현재 저장된 EOG 데이터 리스트 반환
-    }
+    if not eog_data_queue:  # 데이터가 비어있는 경우
+        return {"message": "No EOG data available."}  # 데이터가 없을 경우 메시지 반환
+    return {"message": "EOG 서버 연결 완!", "EOG_DATA": list(eog_data_queue)}  # 데이터가 있을 경우 메시지와 AIRFLOW 데이터 반환
+
