@@ -39,9 +39,9 @@ async def websocket_gsr(websocket: WebSocket):
         logger.error(f"ERROR in GSR WebSocket: {e}")  # 에러 로그 출력
 
 # GSR 데이터를 조회하기 위한 HTTP GET 엔드포인트
-@gsr_router.get("/gsr") 
+@gsr_router.get("/airflow")  
 async def get_gsr():
-    return {
-        "message": "GSR 서버 연결 완!",  # 성공 메시지
-        "GSR_DATA": list(gsr_data_queue)  # 현재 저장된 GSR 데이터 리스트 반환
-    }
+    if not gsr_data_queue:  # 데이터가 비어있는 경우
+        return {"message": "No GSR data available."}  # 데이터가 없을 경우 메시지 반환
+    return {"message": "GSR 서버 연결 완!", "GSR_DATA": list(gsr_data_queue)}  # 데이터가 있을 경우 메시지와 GSR 데이터 반환
+
