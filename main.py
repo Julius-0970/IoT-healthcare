@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 import uvicorn
-from pydantic import BaseModel
-from fastapi.staticfiles import StaticFiles
+# from pydantic import BaseModel
+# from fastapi.staticfiles import StaticFiles
 
 #router로 main이 각 실행파일을 가져오도록 import
 from route import router
@@ -17,3 +17,6 @@ app.include_router(temp_router) # body_temp API 루트 경로 설정
 @app.get("/")
 async def read_root():
     return {"message": "Welcome to the main API!"}
+
+# 정적 파일 경로 설정 - websocket과 충돌의 여지가 있으므로, 출력은 log에 두고 정적 파일 및 경로 없음.
+# app.mount("/static", StaticFiles(directory="public"), name="static")
