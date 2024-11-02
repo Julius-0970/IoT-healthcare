@@ -47,5 +47,5 @@ async def body_temp_websocket(websocket: WebSocket):
 async def get_body_temp():
     if not temperature_data_queue:  # 데이터가 비어있는 경우
         return {"message": "No Body Temperature data available."}  # 데이터가 없을 경우 메시지 반환
-    return {"message": "Body Temperature 서버 연결 완!", "Body Temperature Data": list(temperature_data_queue)}  # 데이터가 있을 경우 메시지와 AIRFLOW 데이터 반환
+    return {"message": "Body Temperature 서버 연결 완!", "Body Temperature Data": list(temperature_data_queue)}  # 데이터가 있을 경우 메시지와 Body Temperature 데이터 반환
 
