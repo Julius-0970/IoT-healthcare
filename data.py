@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-"""
+
 class SensorData(BaseModel):
     airflow: float # 호흡 측정값 
     eog: float     # 안구 움직임 측정값
@@ -13,7 +13,7 @@ class SensorData(BaseModel):
     nibp_diastolic: int   # 혈압 이완기 측정값
     spO2: int             # 혈당(%) 측정값
     bpm: int              # 심박수 측정값
-"""
+
 
 class DeviceData(BaseModel):
     device_id: str   #지정된 장비 번호
