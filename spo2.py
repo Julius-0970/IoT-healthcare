@@ -44,4 +44,4 @@ async def get_spo2():
     return {"message": "spO2 서버 연결 완!"}
     if spo2_data_queue is None:
         return {"message": "No spO2 data available."}  # 데이터가 없을 경우 메시지 반환
-    return ("AIRFLOW_DATA": list(spo2_data_queue)  # 현재 저장된 AIRFLOW 데이터 리스트 반환
+    return ("spO2_DATA": list(spo2_data_queue)  # 현재 저장된 AIRFLOW 데이터 리스트 반환
