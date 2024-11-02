@@ -43,5 +43,5 @@ async def websocket_eog(websocket: WebSocket):
 async def get_eog():
     if not eog_data_queue:  # 데이터가 비어있는 경우
         return {"message": "No EOG data available."}  # 데이터가 없을 경우 메시지 반환
-    return {"message": "EOG 서버 연결 완!", "EOG_DATA": list(eog_data_queue)}  # 데이터가 있을 경우 메시지와 AIRFLOW 데이터 반환
+    return {"message": "EOG 서버 연결 완!", "EOG_DATA": list(eog_data_queue)}  # 데이터가 있을 경우 메시지와 EOG 데이터 반환
 
