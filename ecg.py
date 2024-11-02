@@ -39,7 +39,7 @@ async def websocket_ecg(websocket: WebSocket):
         logger.error(f"ERROR in ECG WebSocket: {e}")  # 에러 로그 출력
 
 # ECG 데이터를 조회하기 위한 HTTP GET 엔드포인트
-@ecg_router.get("/airflow")  
+@ecg_router.get("/ecg")  
 async def get_ecg():
     if not ecg_data_queue:  # 데이터가 비어있는 경우
         return {"message": "No ECG data available."}  # 데이터가 없을 경우 메시지 반환
