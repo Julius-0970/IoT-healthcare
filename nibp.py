@@ -18,6 +18,13 @@ class NIBPData(BaseModel):
 # 전역 변수 초기화
 nibp_data = None  # NIBP 데이터를 저장할 전역 변수
 
+# 저장된 NIBP 값을 조회하는 엔드포인트 (GET)
+@nibp_router.get("/nibp")
+async def get_nibp():
+    if nibp_data is None:
+        return {"message": "No NIBP data available."}  # 데이터가 없을 경우 메시지 반환
+    return {"message": "NIBP data retrieved successfully", "NIBP": nibp_data}
+
 # NIBP 값을 받는 엔드포인트 (POST)
 @nibp_router.post("/nibp")
 async def post_nibp(data: NIBPData):
@@ -25,10 +32,3 @@ async def post_nibp(data: NIBPData):
     # 받은 NIBP 값을 저장
     nibp_data = {"systolic": data.systolic, "diastolic": data.diastolic}
     return {"message": "NIBP received successfully", "NIBP": nibp_data}
-
-# 저장된 NIBP 값을 조회하는 엔드포인트 (GET)
-@nibp_router.get("/nibp")
-async def get_nibp():
-    if nibp_data is None:
-        return {"message": "No NIBP data available."}  # 데이터가 없을 경우 메시지 반환
-    return {"message": "NIBP data retrieved successfully", "NIBP": nibp_data}
