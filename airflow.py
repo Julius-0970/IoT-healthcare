@@ -41,7 +41,7 @@ async def websocket_airflow(websocket: WebSocket):
 # AIRFLOW 데이터를 조회하기 위한 HTTP GET 엔드포인트
 @airflow_router.get("/airflow")  
 async def get_airflow():
-    return {
-        "message": "AIRFLOW 서버 연결 완!",  # 성공 메시지
-        "AIRFLOW_DATA": list(airflow_data_queue)  # 현재 저장된 AIRFLOW 데이터 리스트 반환
-    }
+    return {"message": "AIRFLOW 서버 연결 완!"}
+    if airflow_data_queue is None:
+        return {"message": "No AIRFLOW data available."}  # 데이터가 없을 경우 메시지 반환
+    return ("AIRFLOW_DATA": list(airflow_data_queue)  # 현재 저장된 AIRFLOW 데이터 리스트 반환
