@@ -41,7 +41,6 @@ async def websocket_spo2(websocket: WebSocket):
 # spO2 데이터를 조회하기 위한 HTTP GET 엔드포인트
 @spo2_router.get("/spo2")  
 async def get_spo2():
-    return {"message": "spO2 서버 연결 완!"}
-    if spo2_data_queue is None:
+    if not spo2_data_queue:  # 데이터가 비어있는 경우
         return {"message": "No spO2 data available."}  # 데이터가 없을 경우 메시지 반환
-    return ("spO2_DATA": list(spo2_data_queue)  # 현재 저장된 AIRFLOW 데이터 리스트 반환
+    return {"message": "spO2 서버 연결 완!", "spO2_DATA": list(spo2_data_queue)}  # 데이터가 있을 경우 메시지와 AIRFLOW 데이터 반환
