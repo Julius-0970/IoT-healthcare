@@ -28,20 +28,28 @@ async def post_body_temp(data: TemperatureData):
 async def body_temp_websocket(websocket: WebSocket):
     await websocket.accept()
 
-    if temperature_data_queue:
-        all_data = list(temperature_data_queue)
-        await websocket.send_text(f"Current temperature data: {all_data}")
 
     try:
         while True:
-            # 클라이언트로부터 메시지를 기다림 - int변환은 백엔드에서 진행.
-            temp_data = await websocket.receive_text()
-            # 큐에 저장
-            temperature_data_queue.append(temp_data)
-            # 로그에 수신된 데이터 출력
-            logger.info(f"Received temperature data: {temp_data}")  # 데이터 출력
-            # 보내기전 대기상태
-            await websocket.send_text(temp_data)
+            # 클라이언트로부터 메시지를 기다림
+            message = await websocket.receive_text()
+
+           # 만약 메시지가 "GET"이라면 큐의 데이터를 반환
+           if message == "GET":
+                if temperature_data_queue:
+                    # 직접 deque를 사용하여 데이터 전송
+                    await websocket.send_text(f"Current temperature data: {temperature_data_queue}")
+                else:
+                    await websocket.send_text("No temperature data available.")
+            else:
+                # 라즈베리파이가 보낸 데이터 처리
+                # temp_data = await websocket.receive_text()
+                temperature_data_queue.append(message)
+                logger.info(f"Received temperature data: {message}")  # 데이터 출력
+                
+                # 라즈베리파이 클라이언트에게 수신 메시지 전송
+                await websocket.send_text(temp_data)
+    
     except WebSocketDisconnect :
         logger.info("WebSocket disconnected")
     except Exception as e :
