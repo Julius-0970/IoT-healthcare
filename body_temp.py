@@ -27,6 +27,11 @@ async def post_body_temp(data: TemperatureData):
 @temp_router.websocket("/ws/body_temp")
 async def body_temp_websocket(websocket: WebSocket):
     await websocket.accept()
+
+    if temperature_data_queue:
+        all_data = list(temperature_data_queue)
+        await websocket.send_text(f"Current temperature data: {all_data}")
+
     try:
         while True:
             # 클라이언트로부터 메시지를 기다림 - int변환은 백엔드에서 진행.
@@ -48,4 +53,25 @@ async def get_body_temp():
     if not temperature_data_queue:  # 데이터가 비어있는 경우
         return {"message": "No Body Temperature data available."}  # 데이터가 없을 경우 메시지 반환
     return {"message": "Body Temperature 서버 연결 완!", "Body Temperature Data": list(temperature_data_queue)}  # 데이터가 있을 경우 메시지와 Body Temperature 데이터 반환
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
