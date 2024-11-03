@@ -37,6 +37,10 @@ async def body_temp_websocket(websocket: WebSocket):
                 if temperature_data_queue:
                     # 직접 deque를 사용하여 데이터 전송
                     await websocket.send_text(f"Current temperature data: {temperature_data_queue}")
+
+                    # 데이터 전송 후 큐 초기화
+                    temperature_data_queue.clear()
+                    logger.info("Temperature data queue has been cleared.")
                 else:
                     await websocket.send_text("No temperature data available.")
             else:
