@@ -55,6 +55,8 @@ async def body_temp_websocket(websocket: WebSocket):
         logger.info("WebSocket disconnected")
     except Exception as e:
         logger.error(f"ERROR: {e}")
+        #클라이언트한테 에러 내용 전송
+        await websocket.send_text(f"An error occurred: {e}")
 
 # 저장된 body_temp 값을 조회하는 엔드포인트 (GET)
 @temp_router.get("/body_temp")  
