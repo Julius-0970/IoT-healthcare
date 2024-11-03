@@ -1,6 +1,10 @@
 from fastapi import FastAPI
 import uvicorn
+import logging
 # from fastapi.staticfiles import StaticFiles
+
+#로그 설정 및 양식 정의
+logging.basicConfig(level=INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
 #router로 main이 각 실행파일을 가져오도록 import
 from route import router
