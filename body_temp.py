@@ -5,7 +5,6 @@ from collections import deque
 import logging 
 
 # 로그 설정
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("temp_logger")
 
 temp_router = APIRouter()
