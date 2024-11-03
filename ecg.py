@@ -23,20 +23,37 @@ async def websocket_ecg(websocket: WebSocket):
 
     # 클라이언트의 WebSocket 연결 수락 및 대기
     await websocket.accept()  
+  
     try:
         while True:
-            # 클라이언트로부터 ECG 데이터 수신
-            ecg_data = await websocket.receive_text()
-            # 수신된 데이터를 큐에 추가
-            ecg_data_queue.append(ecg_data)
-            # 수신된 데이터 로그에 출력
-            logger.info(f"Received ECG data: {ecg_data}")
-            # 백엔드 서버에 수신된 데이터 전송
-            await websocket.send_text(ecg_data)
-    except WebSocketDisconnect:  # WebSocket 연결이 끊어졌을 때
-        logger.info("ECG WebSocket disconnected")  # 로그에 연결 끊김 정보 출력
-    except Exception as e:  # 다른 예외가 발생했을 때
-        logger.error(f"ERROR in ECG WebSocket: {e}")  # 에러 로그 출력
+            # 클라이언트로부터 메시지를 기다림
+            message = await websocket.receive_text()
+
+            # 만약 메시지가 "GET"이라면 큐의 데이터를 반환
+            if message == "GET":
+                if ecg_data_queue:
+                    # 직접 deque를 사용하여 데이터 전송
+                    await websocket.send_text(f"Current ECG data: {ecg_data_queue}")
+
+                    # 데이터 전송 후 큐 초기화
+                    ecg_data_queue.clear()
+                    logger.info("ECG data queue has been cleared.")
+                else:
+                    await websocket.send_text("No ECG data available.")
+            else:
+                # 라즈베리파이가 보낸 데이터 처리
+                ecg_data_queue.append(message)
+                logger.info(f"Received ECG data: {message}")  # 데이터 출력
+                
+                # 라즈베리파이 클라이언트에게 수신 메시지 전송
+                await websocket.send_text(message)
+
+    except WebSocketDisconnect:
+        logger.info("WebSocket disconnected")
+    except Exception as e:
+        logger.error(f"ERROR: {e}")
+        #클라이언트한테 오류내용 전송
+        await websocket.send_text(f"An error occurred: {e}")
 
 # ECG 데이터를 조회하기 위한 HTTP GET 엔드포인트
 @ecg_router.get("/ecg")  
