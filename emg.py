@@ -1,3 +1,5 @@
+#EMG 
+
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from collections import deque
 import logging
@@ -27,7 +29,7 @@ async def websocket_emg(websocket: WebSocket):
             if message == "GET":
                 if emg_data_queue:
                     # 직접 deque를 사용하여 데이터 전송
-                    await websocket.send_text(f"Current EMG data: {list(emg_data_queue)}")
+                    await websocket.send_text(f"Current EMG data: {emg_data_queue}")
 
                     # 데이터 전송 후 큐 초기화
                     emg_data_queue.clear()
