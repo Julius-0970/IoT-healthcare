@@ -11,7 +11,7 @@ logger = logging.getLogger("temp_logger")
 temp_router = APIRouter()
 
 # 큐를 사용하여 body_temp 데이터를 저장
-temperature_data_queue = deque(maxlen=416)  # 최대 크기 설정
+temperature_data_queue = deque(maxlen=2000)  # 최대 크기 설정
 
 """
 # body_temp 값을 받는 엔드포인트 (POST)
