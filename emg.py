@@ -6,7 +6,6 @@ import logging  # 로깅 기능을 사용하기 위한 import
 emg_router = APIRouter()
 
 # 로깅 설정
-logging.basicConfig(level=logging.INFO)  # INFO 레벨의 로그 메시지를 출력하도록 설정
 logger = logging.getLogger("emg_logger")  # 현재 모듈의 로거 인스턴스 생성
 
 # EMG 데이터를 실시간으로 송수신하기 위한 큐(데크) 생성
