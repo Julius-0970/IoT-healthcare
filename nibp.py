@@ -5,7 +5,6 @@ from pydantic import BaseModel
 import logging 
 
 # 로그 설정
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("nibp_logger")
 
 nibp_router = APIRouter()
