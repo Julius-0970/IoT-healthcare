@@ -25,35 +25,35 @@ async def websocket_eog(websocket: WebSocket):
     await websocket.accept()  
     
         try:
-        while True:
-            # 클라이언트로부터 메시지를 기다림
-            message = await websocket.receive_text()
-
-            # 만약 메시지가 "GET"이라면 큐의 데이터를 반환
-            if message == "GET":
-                if eog_data_queue:
-                    # 직접 deque를 사용하여 데이터 전송
-                    await websocket.send_text(f"Current EOG data: {eog_data_queue}")
-
-                    # 데이터 전송 후 큐 초기화
-                    eog_data_queue.clear()
-                    logger.info("EOG data queue has been cleared.")
+            while True:
+                # 클라이언트로부터 메시지를 기다림
+                message = await websocket.receive_text()
+    
+                # 만약 메시지가 "GET"이라면 큐의 데이터를 반환
+                if message == "GET":
+                    if eog_data_queue:
+                        # 직접 deque를 사용하여 데이터 전송
+                        await websocket.send_text(f"Current EOG data: {eog_data_queue}")
+    
+                        # 데이터 전송 후 큐 초기화
+                        eog_data_queue.clear()
+                        logger.info("EOG data queue has been cleared.")
+                    else:
+                        await websocket.send_text("No EOG data available.")
                 else:
-                    await websocket.send_text("No EOG data available.")
-            else:
-                # 라즈베리파이가 보낸 데이터 처리
-                eog_data_queue.append(message)
-                logger.info(f"Received EOG data: {message}")  # 데이터 출력
-                
-                # 라즈베리파이 클라이언트에게 수신 메시지 전송
-                await websocket.send_text(message)
-
-    except WebSocketDisconnect:
-        logger.info("WebSocket disconnected")
-    except Exception as e:
-        logger.error(f"ERROR: {e}")
-        #클라이언트한테 오류내용 전송
-        await websocket.send_text(f"An error occurred: {e}")
+                    # 라즈베리파이가 보낸 데이터 처리
+                    eog_data_queue.append(message)
+                    logger.info(f"Received EOG data: {message}")  # 데이터 출력
+                    
+                    # 라즈베리파이 클라이언트에게 수신 메시지 전송
+                    await websocket.send_text(message)
+    
+        except WebSocketDisconnect:
+            logger.info("WebSocket disconnected")
+        except Exception as e:
+            logger.error(f"ERROR: {e}")
+            #클라이언트한테 오류내용 전송
+            await websocket.send_text(f"An error occurred: {e}")
 
 # EOG 데이터를 조회하기 위한 HTTP GET 엔드포인트
 @eog_router.get("/eog")  
