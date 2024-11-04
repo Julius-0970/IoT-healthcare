@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 import uvicorn
 import logging
+from starlette.middleware.cors import CORSMiddleware
 # from fastapi.staticfiles import StaticFiles
 
 #로그 설정 및 양식 정의
