@@ -3,7 +3,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 import logging 
 
 # 로깅 설정
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("valid_logger")
 
 # APIRouter 인스턴스 생성
 valid_router = APIRouter()
