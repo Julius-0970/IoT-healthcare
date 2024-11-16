@@ -17,6 +17,8 @@ from gsr import gsr_router
 from airflow import airflow_router
 from nibp import nibp_router
 from spo2 import spo2_router
+# 이름 확인
+from valid_name import valid_router
 
 #from patient_dispatch import router
 
@@ -40,6 +42,7 @@ app.include_router(gsr_router) # GSR API 루트 경로 설정
 app.include_router(airflow_router) # airflow API 루트 경로 설정
 app.include_router(nibp_router) # NIBP API 루트 경로 설정
 app.include_router(spo2_router) # spO2 API 루트 경로 설정
+app.include_router(valid_router)  # username 검증 API 루트 경로 설정
 
 
 # 루트 경로에 기본 응답을 추가
