@@ -58,4 +58,49 @@ async def body_temp_websocket(websocket: WebSocket):
 
                         # 데이터 전송 후 큐 초기화
                         temperature_data_queue.clear()
-                        log
+                        logger.info("체온 데이터 큐가 초기화되었습니다.")
+                    else:
+                        await websocket.send_text("No temperature data available.")
+                        logger.info("전송할 체온 데이터가 없습니다.")
+                else:
+                    logger.warning(f"예상치 못한 텍스트 메시지 수신: {text}")
+                    await websocket.send_text("Unexpected message format.")
+            
+            elif message["type"] == "websocket.receive.bytes":
+                data = message["bytes"]
+                
+                if user_name and user_name in valid_users:
+                    # 데이터가 유효한 사용자로부터 온 경우에만 처리
+                    # 예시로, 바이너리 데이터를 UTF-8로 디코딩하여 문자열로 변환
+                    try:
+                        temperature_str = data.decode('utf-8')
+                        temperature = float(temperature_str)  # 체온 데이터를 실수로 변환
+                        temperature_data_queue.append(temperature)
+                        logger.info(f"'{user_name}' 사용자로부터 체온 데이터 수신: {temperature}")
+                        
+                        # 클라이언트에게 데이터 수신 확인 메시지 전송
+                        await websocket.send_text("Temperature data received successfully.")
+                    except (UnicodeDecodeError, ValueError) as e:
+                        logger.error(f"체온 데이터 디코딩 실패: {e}")
+                        await websocket.send_text("Invalid temperature data format.")
+                else:
+                    logger.warning("인증되지 않은 사용자로부터 체온 데이터 수신.")
+                    await websocket.send_text("User not authenticated. Please authenticate first.")
+            
+            else:
+                logger.warning(f"알 수 없는 메시지 유형 수신: {message['type']}")
+                await websocket.send_text("Unknown message type received.")
+    
+    except WebSocketDisconnect:
+        logger.info("WebSocket 연결 해제됨.")
+    except Exception as e:
+        logger.error(f"오류 발생: {e}")
+        # 클라이언트에게 에러 내용 전송
+        await websocket.send_text(f"An error occurred: {e}")
+
+# 저장된 body_temp 값을 조회하는 엔드포인트 (GET)
+@temp_router.get("/body_temp")  
+async def get_body_temp():
+    if not temperature_data_queue:  # 데이터가 비어있는 경우
+        return {"message": "저장된 체온 데이터가 없습니다."}  # 데이터가 없을 경우 메시지 반환
+    return {"message": "Body Temperature 서버 연결 완!", "Body Temperature Data": list(temperature_data_queue)}  # 데이터가 있을 경우 메시지와 Body Temperature 데이터 반환
