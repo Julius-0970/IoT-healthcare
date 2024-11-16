@@ -43,4 +43,20 @@ async def body_temp_websocket(websocket: WebSocket):
                         temperature_data_queue.clear()
                         logger.info("체온 데이터 큐가 초기화되었습니다.")
                     else:
-                 
+                        # 데이터가 없는 경우 처리
+                        await websocket.send_text("큐에 체온 데이터가 없습니다.")
+                        logger.info("큐가 비어 있음을 클라이언트에게 알렸습니다.")
+
+                else:
+                    await websocket.send_text("알 수 없는 명령입니다.")
+                    logger.warning(f"클라이언트로부터 알 수 없는 명령 수신: {message}")
+
+            except Exception as e:
+                logger.error(f"WebSocket 데이터 처리 중 오류 발생: {e}")
+                await websocket.send_text("데이터 처리 중 오류가 발생했습니다.")
+                break
+
+    except WebSocketDisconnect:
+        logger.info("클라이언트가 연결을 종료했습니다.")
+    finally:
+        logger.info("WebSocket 연결이 종료되었습니다.")
