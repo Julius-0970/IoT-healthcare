@@ -1,10 +1,16 @@
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException
 from collections import deque
 import logging
 
 # 로그 설정
 logger = logging.getLogger("temp_logger")
 logger.setLevel(logging.DEBUG)  # 로그 레벨 설정
+
+# 핸들러 추가 (콘솔 출력)
+handler = logging.StreamHandler()
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 # APIRouter 인스턴스 생성
 temp_router = APIRouter()
@@ -23,35 +29,54 @@ async def body_temp_websocket(websocket: WebSocket):
 
     try:
         while True:
-            # WebSocket 메시지 수신
-            message = await websocket.receive()
+            try:
+                # 바이너리 데이터 수신
+                data = await websocket.receive_bytes()
+                logger.debug(f"수신된 데이터: {data.hex()}")
 
-            # 메시지 타입 확인 및 처리
-            if isinstance(message, dict) and message.get("type") == "websocket.receive":
-                if "bytes" in message:
-                    data = message["bytes"]
+                # 데이터 길이 확인
+                if len(data) != 10:
+                    logger.warning(f"잘못된 데이터 크기 수신: {len(data)} bytes. 예상 크기: 10 bytes.")
+                    await websocket.send_text("Invalid packet size. Expected 10 bytes.")
+                    continue
 
-                    # 데이터 길이 확인
-                    if len(data) != 10:
-                        logger.warning(f"잘못된 데이터 크기 수신: {len(data)} bytes. 예상 크기: 10 bytes.")
-                        await websocket.send_text("Invalid packet size. Expected 10 bytes.")
-                        continue
+                # 패킷 검증
+                if data[0] == 0xF7 and data[-1] == 0xFA:
+                    cmd_id = data[1]  # CMD 확인
+                    data_size = data[2]  # DATA SIZE 확인
+                    logger.debug(f"CMD ID: {cmd_id}, DATA SIZE: {data_size}")
 
-                    # 데이터 저장
-                    temperature_data_queue.append(data)
-                    logger.info(f"큐에 데이터 저장됨: {data.hex()}")
-                    await websocket.send_text("Temperature data received successfully.")
+                    # CMD와 데이터 크기를 통해 온도 데이터인지 확인
+                    if cmd_id == 0xA2 and data_size == 4:
+                        try:
+                            high_byte = int.from_bytes(data[3:5], byteorder='big')  # 상위 2바이트
+                            low_byte = int.from_bytes(data[5:7], byteorder='big')   # 하위 2바이트
+                            logger.debug(f"High Byte: {high_byte}, Low Byte: {low_byte}")
+
+                            temperature_raw = high_byte + low_byte
+                            temperature = temperature_raw / 100.0
+                            temperature_data_queue.append(temperature)
+                            logger.info(f"큐에 데이터 저장됨: {temperature}")
+                            await websocket.send_text("Temperature data received successfully.")
+                        except IndexError as ie:
+                            logger.error(f"데이터 해석 오류: {ie}")
+                            await websocket.send_text("Data parsing error.")
+                    else:
+                        logger.warning(f"잘못된 CMD ID 또는 데이터 크기: CMD ID={cmd_id}, DATA SIZE={data_size}")
+                        await websocket.send_text("Invalid CMD ID or DATA SIZE.")
                 else:
-                    logger.warning("바이너리 데이터가 포함되지 않음.")
-            elif message.get("type") == "websocket.disconnect":
+                    logger.warning("패킷의 시작 또는 끝 바이트가 올바르지 않음.")
+                    await websocket.send_text("Invalid packet format.")
+            except WebSocketDisconnect:
                 logger.info("WebSocket 연결 해제됨.")
                 break
-            else:
-                logger.warning(f"알 수 없는 메시지 유형: {message}")
+            except Exception as e:
+                logger.error(f"데이터 수신 및 처리 중 오류 발생: {e}")
+                await websocket.send_text("Internal server error.")
     except WebSocketDisconnect:
         logger.info("WebSocket 연결 해제됨.")
     except Exception as e:
-        logger.error(f"오류 발생: {e}")
+        logger.error(f"WebSocket 처리 중 오류 발생: {e}")
 
 # 저장된 body_temp 값을 조회하는 엔드포인트 (GET)
 @temp_router.get("/body_temp")  
