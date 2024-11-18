@@ -1,6 +1,6 @@
-# 이름 검증
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-import logging 
+import logging
+import asyncio
 
 # 로깅 설정
 logger = logging.getLogger("valid_logger")
@@ -8,9 +8,11 @@ logger = logging.getLogger("valid_logger")
 # APIRouter 인스턴스 생성
 valid_router = APIRouter()
 
-
 # 테스트용 사용자 데이터베이스 (예: 실제로는 데이터베이스를 사용)
 valid_users = {"user1", "user2", "user3"}  # 검증에 사용할 사용자 목록
+
+# 사용자 이름을 저장할 큐
+username_queue = asyncio.Queue()
 
 @valid_router.websocket("/ws/validate_user")
 async def validate_user(websocket: WebSocket):
@@ -35,7 +37,12 @@ async def validate_user(websocket: WebSocket):
             
             # 검증 결과 클라이언트로 전송
             await websocket.send_text(response)
+            
+            # 사용자 이름 큐에 추가
+            await username_queue.put(user_name)
+            logger.debug(f"큐에 추가된 사용자 이름: {user_name}")
     except WebSocketDisconnect:
         logger.info("클라이언트가 연결을 끊었습니다.")
     except Exception as e:
         logger.error(f"오류 발생: {e}")
+
