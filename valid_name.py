@@ -50,9 +50,17 @@ async def validate_user(websocket: WebSocket):
 # 저장된 username 값을 조회하는 엔드포인트 (GET)
 @valid_router.get("/validate_user")
 async def get_validate_user():
-    if not username_queue:  # 데이터가 비어있는 경우
-        return {"message": "저장된 유저 정보가 없습니다."}  # 데이터가 없을 경우 메시지 반환
+    """
+    저장된 검증된 사용자 이름을 반환합니다.
+    """
+    users = []
+    while not username_queue.empty():
+        users.append(await username_queue.get())  # 큐에서 데이터를 꺼냄
+    
+    if not users:
+        return {"message": "저장된 유저 정보가 없습니다."}
+    
     return {
         "message": "유저 정보 데이터 조회 성공",
-        "User Name Info": username_queue
-    }  # 데이터가 있을 경우 메시지와 Body Temperature 데이터 반환
+        "User Names": users
+    }
