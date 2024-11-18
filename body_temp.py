@@ -16,42 +16,42 @@ temperature_data_queue = deque(maxlen=15000)  # 최대 크기 설정
 async def body_temp_websocket(websocket: WebSocket):
     """
     Body Temperature 센서 데이터를 수신하고 저장하는 WebSocket 엔드포인트.
-    - 클라이언트로부터 10바이트 크기의 16진수 패킷을 바이너리 형태로 수신.
-    - 수신된 패킷을 큐에 저장.
+    - 클라이언트로부터 바이너리 데이터를 수신하고 처리.
     """
     await websocket.accept()
     logger.info("WebSocket 연결 수락됨.")
 
     try:
         while True:
+            # WebSocket 메시지 수신
             message = await websocket.receive()
 
-            if message["type"] == "websocket.receive.bytes":
-                data = message["bytes"]
+            # 메시지 타입 확인 및 처리
+            if isinstance(message, dict) and message.get("type") == "websocket.receive":
+                if "bytes" in message:
+                    data = message["bytes"]
 
-                # 데이터 길이 검증
-                if len(data) != 10:
-                    logger.warning(f"잘못된 데이터 크기 수신: {len(data)} bytes. 예상 크기: 10 bytes.")
-                    await websocket.send_text("Invalid packet size. Expected 10 bytes.")
-                    continue
+                    # 데이터 길이 확인
+                    if len(data) != 10:
+                        logger.warning(f"잘못된 데이터 크기 수신: {len(data)} bytes. 예상 크기: 10 bytes.")
+                        await websocket.send_text("Invalid packet size. Expected 10 bytes.")
+                        continue
 
-                # 데이터 저장
-                temperature_data_queue.append(data)
-                logger.debug(f"체온 데이터 큐에 저장됨: {data.hex()}")
-
-                # 클라이언트에게 데이터 수신 확인 메시지 전송
-                await websocket.send_text("Temperature packet received successfully.")
-            
+                    # 데이터 저장
+                    temperature_data_queue.append(data)
+                    logger.info(f"큐에 데이터 저장됨: {data.hex()}")
+                    await websocket.send_text("Temperature data received successfully.")
+                else:
+                    logger.warning("바이너리 데이터가 포함되지 않음.")
+            elif message.get("type") == "websocket.disconnect":
+                logger.info("WebSocket 연결 해제됨.")
+                break
             else:
-                logger.warning(f"알 수 없는 메시지 유형 수신: {message['type']}")
-                await websocket.send_text("Only binary data packets are accepted.")
-    
+                logger.warning(f"알 수 없는 메시지 유형: {message}")
     except WebSocketDisconnect:
         logger.info("WebSocket 연결 해제됨.")
     except Exception as e:
         logger.error(f"오류 발생: {e}")
-        # 클라이언트에게 에러 내용 전송
-        await websocket.send_text(f"An error occurred: {e}")
 
 # 저장된 body_temp 값을 조회하는 엔드포인트 (GET)
 @temp_router.get("/body_temp")  
