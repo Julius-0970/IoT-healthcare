@@ -49,12 +49,10 @@ async def validate_user(websocket: WebSocket):
 
 # 저장된 username 값을 조회하는 엔드포인트 (GET)
 @valid_router.get("/validate_user")
-async def get_body_temp():
+async def get_validate_user():
     if not username_queue:  # 데이터가 비어있는 경우
         return {"message": "저장된 유저 정보가 없습니다."}  # 데이터가 없을 경우 메시지 반환
-    # 큐에 저장된 데이터를 16진수 문자열로 변환하여 반환
-    data_hex = [data.hex() for data in username_queue]
     return {
         "message": "유저 정보 데이터 조회 성공",
-        "User Name Info": data_hex
+        "User Name Info": username_queue
     }  # 데이터가 있을 경우 메시지와 Body Temperature 데이터 반환
