@@ -6,12 +6,6 @@ import logging
 logger = logging.getLogger("temp_logger")
 logger.setLevel(logging.DEBUG)  # 로그 레벨 설정
 
-# 핸들러 추가 (콘솔 출력)
-handler = logging.StreamHandler()
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-handler.setFormatter(formatter)
-logger.addHandler(handler)
-
 # APIRouter 인스턴스 생성
 temp_router = APIRouter()
 
@@ -83,9 +77,5 @@ async def body_temp_websocket(websocket: WebSocket):
 async def get_body_temp():
     if not temperature_data_queue:  # 데이터가 비어있는 경우
         return {"message": "저장된 체온 데이터가 없습니다."}  # 데이터가 없을 경우 메시지 반환
-    # 큐에 저장된 데이터를 16진수 문자열로 변환하여 반환
-    data_hex = [data.hex() for data in temperature_data_queue]
-    return {
-        "message": "Body Temperature 데이터 조회 성공",
-        "Body Temperature Data": data_hex
-    }  # 데이터가 있을 경우 메시지와 Body Temperature 데이터 반환
+    # 큐에 저장된 데이터를 출력
+    return {"message": "Body Temp received successfully", "Temp": list(temperature_data_queue)}
