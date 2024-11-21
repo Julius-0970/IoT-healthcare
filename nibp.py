@@ -30,7 +30,6 @@ async def websocket_nibp(websocket: WebSocket):
 
     # 클라이언트의 WebSocket 연결 수락 및 대기
     await websocket.accept()  
-
     try:
         while True:
             # 클라이언트로부터 메시지를 기다림
@@ -38,19 +37,19 @@ async def websocket_nibp(websocket: WebSocket):
 
             # 만약 메시지가 "GET"이라면 큐의 데이터를 반환
             if message == "GET":
-                if spo2_data_queue:
+                if nibp_data_queue:
                     # 직접 deque를 사용하여 데이터 전송
-                    await websocket.send_text(f"Current spO2 data: {spo2_data_queue}")
+                    await websocket.send_text(f"Current NIBP data: {nibp_data_queue}")
 
                     # 데이터 전송 후 큐 초기화
-                    spo2_data_queue.clear()
-                    logger.info("spO2 data queue has been cleared.")
+                    nibp_data_queue.clear()
+                    logger.info("NIBP data queue has been cleared.")
                 else:
-                    await websocket.send_text("No spO2 data available.")
+                    await websocket.send_text("No NIBP data available.")
             else:
                 # 라즈베리파이가 보낸 데이터 처리
-                spo2_data_queue.append(message)
-                logger.info(f"Received spO2 data: {message}")  # 데이터 출력
+                nibp_data_queue.append(message)
+                logger.info(f"Received NIBP data: {message}")  # 데이터 출력
                 
                 # 라즈베리파이 클라이언트에게 수신 메시지 전송
                 await websocket.send_text(message)
