@@ -25,7 +25,7 @@ async def get_nibp():
     return {"message": "NIBP data retrieved successfully", "NIBP": nibp_data}
 
 # WebSocket 경로 설정
-@spo2_router.websocket("/ws/nibp")
+@nibp_router.websocket("/ws/nibp")
 async def websocket_nibp(websocket: WebSocket):
 
     # 클라이언트의 WebSocket 연결 수락 및 대기
