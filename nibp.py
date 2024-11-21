@@ -26,7 +26,7 @@ async def get_nibp():
 
 # WebSocket 경로 설정
 @spo2_router.websocket("/ws/nibp")
-async def websocket_spo2(websocket: WebSocket):
+async def websocket_nibp(websocket: WebSocket):
 
     # 클라이언트의 WebSocket 연결 수락 및 대기
     await websocket.accept()  
