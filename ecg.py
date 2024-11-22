@@ -66,12 +66,16 @@ async def websocket_ecg(websocket: WebSocket):
                 raw_data_hex = data.hex()
                 logger.debug(f"수신된 데이터: {raw_data_hex}")
 
-                # 데이터를 큐에 저장
-                ecg_data_queue.append(raw_data_hex)
-                logger.info("수신된 데이터가 큐에 저장되었습니다.")
+                # 데이터를 파싱하여 큐에 저장
+                parsed_values = parse_ecg_data(raw_data_hex)
+                if parsed_values:
+                    ecg_data_queue.extend(parsed_values)
+                    logger.info(f"{len(parsed_values)}개의 파싱된 데이터가 큐에 저장되었습니다.")
+                else:
+                    logger.warning("파싱된 데이터가 없습니다.")
 
                 # 클라이언트에 수신 확인 메시지 전송
-                await websocket.send_text("ECG data received successfully.")
+                await websocket.send_text("ECG data received and parsed successfully.")
             except WebSocketDisconnect:
                 logger.info("WebSocket 연결 해제됨.")
                 break
@@ -87,41 +91,8 @@ async def websocket_ecg(websocket: WebSocket):
 @ecg_router.get("/ecg")
 async def get_ecg():
     """
-    큐에 저장된 ECG 데이터를 반환하는 HTTP GET 엔드포인트.
+    큐에 저장된 파싱된 ECG 데이터를 반환하는 HTTP GET 엔드포인트.
     """
     if not ecg_data_queue:
         return {"message": "No ECG data available.", "data": []}
     return {"message": "ECG 데이터 조회 성공", "data": list(ecg_data_queue)}
-
-"""
-# ECG 데이터를 그래프로 반환하는 새로운 HTTP GET 엔드포인트
-@ecg_router.get("/ecg/graph")
-async def get_ecg_graph():
-    if not ecg_data_queue:
-        raise HTTPException(status_code=404, detail="No ECG data available.")
-
-    # 큐에 저장된 모든 데이터 파싱
-    parsed_values = []
-    for raw_data_hex in ecg_data_queue:
-        values = parse_ecg_data(raw_data_hex)
-        parsed_values.extend(values)
-
-    if not parsed_values:
-        raise HTTPException(status_code=500, detail="Failed to parse ECG data.")
-
-    # 그래프 생성
-    plt.figure(figsize=(10, 4))
-    plt.plot(parsed_values)
-    plt.title("ECG Data")
-    plt.xlabel("Sample")
-    plt.ylabel("Value")
-    plt.grid(True)
-
-    # 그래프를 바이너리 스트림으로 변환
-    buf = io.BytesIO()
-    plt.savefig(buf, format='png')
-    buf.seek(0)
-    plt.close()
-
-    return StreamingResponse(buf, media_type="image/png")
-"""
