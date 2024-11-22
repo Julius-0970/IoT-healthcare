@@ -41,18 +41,14 @@ def parse_spo2_packet(packet: bytes):
         raise ValueError("Invalid DATA_SIZE")
 
     # 리틀 엔디안 데이터 해석
-    value_1 = int.from_bytes(packet[5:7], byteorder="little")  # 6200 -> 98
-    value_2 = int.from_bytes(packet[3:5], byteorder="little")  # 005a -> 90
+    spo2 = int.from_bytes(packet[5:7], byteorder="little")  # 6200 -> 98
+    BPM = int.from_bytes(packet[3:5], byteorder="little")  # 005a -> 90
 
     eop = packet[-1]
 
     return {
-        "SOP": sop,
-        "CMD": cmd,
-        "DATA_SIZE": data_size,
-        "VALUE_1": value_1,
-        "VALUE_2": value_2,
-        "EOP": eop
+        "SpO2": spo2,
+        "BPM": BPM,
     }
 
 
