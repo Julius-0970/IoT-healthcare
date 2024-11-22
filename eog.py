@@ -21,27 +21,29 @@ async def websocket_eog(websocket: WebSocket):
 
     try:
         while True:
-            # 클라이언트로부터 메시지를 기다림
-            message = await websocket.receive_text()
+            try:
+                # 바이너리 데이터 수신
+                data = await websocket.receive_bytes()
+                logger.debug(f"수신된 데이터: {data.hex()}")
 
-            # 만약 메시지가 "GET"이라면 큐의 데이터를 반환
-            if message == "GET":
-                if eog_data_queue:
-                    # 직접 deque를 사용하여 데이터 전송
-                    await websocket.send_text(f"Current EOG data: {eog_data_queue}")
+                # 데이터 길이 확인
+                if len(data) != 86:
+                    logger.warning(f"잘못된 데이터 크기 수신: {len(data)} bytes. 예상 크기: 86 bytes.")
+                    await websocket.send_text("Invalid packet size. Expected 86 bytes.")
+                    continue
 
-                    # 데이터 전송 후 큐 초기화
-                    eog_data_queue.clear()
-                    logger.info("EOG data queue has been cleared.")
-                else:
-                    await websocket.send_text("No EOG data available.")
-            else:
-                # 라즈베리파이가 보낸 데이터 처리
-                eog_data_queue.append(message)
-                logger.info(f"Received EOG data: {message}")  # 데이터 출력
-                
-                # 라즈베리파이 클라이언트에게 수신 메시지 전송
-                await websocket.send_text(message)
+                    # 패킷 검증
+                    if data[0] == 0xF7 and data[-1] == 0xFA:
+                        cmd_id = data[1]  # CMD 확인
+                        data_size = data[2]  # DATA SIZE 확인
+                        logger.debug(f"CMD ID: {cmd_id}, DATA SIZE: {data_size}")
+
+             # 클라이언트에 수신 데이터 전송
+                await websocket.send_text(f"Received EOG data - {data.hex()}")
+            except ValueError:
+                # 잘못된 데이터 형식 처리
+                logger.warning(f"Invalid data format received: {message}")
+                await websocket.send_text("Error: Invalid data format.")
 
     except WebSocketDisconnect:
         logger.info("WebSocket disconnected")
