@@ -14,9 +14,6 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 # ECG 데이터를 실시간으로 송수신하기 위한 큐(데크) 생성
-ecg_data_queue = deque(maxlen=15000)  # 최대 15000개의 최신 데이터만 저장
-
-# ECG 데이터를 파싱하는 함수
 def parse_ecg_data(raw_data_hex):
     """
     수신된 원시 ECG 데이터(hex 문자열)를 파싱하여 실제 값 리스트로 변환합니다.
@@ -25,29 +22,28 @@ def parse_ecg_data(raw_data_hex):
         raw_data_bytes = bytes.fromhex(raw_data_hex)
         data_values = []
         i = 0
-        while i < len(raw_data_bytes) - 1:
+        while i < len(raw_data_bytes) - 3:  # 최소 4바이트 남았는지 확인
             # 데이터 값 추출 (2바이트)
             data_pair = raw_data_bytes[i:i+2]
             data_value = int.from_bytes(data_pair, byteorder='big')
             i += 2
             # 마커 값 추출 (2바이트)
-            if i < len(raw_data_bytes) - 1:
-                marker_pair = raw_data_bytes[i:i+2]
-                marker_value = int.from_bytes(marker_pair, byteorder='big')
-                i += 2
-            else:
-                marker_value = None
+            marker_pair = raw_data_bytes[i:i+2]
+            marker_value = int.from_bytes(marker_pair, byteorder='big')
+            i += 2
             # 실제 값 계산
-            if marker_value is not None:
-                real_value = data_value - marker_value
+            real_value = data_value - marker_value
+            # 음수 값이나 범위를 벗어나는 값 제외
+            if 8000 <= real_value <= 10000:
                 data_values.append(real_value)
             else:
-                # 마커 값이 없을 경우 데이터 값만 추가
-                data_values.append(data_value)
+                # 해당 데이터는 제외
+                pass
         return data_values
     except Exception as e:
         logger.error(f"데이터 파싱 중 오류 발생: {e}")
         return []
+
 
 # ECG 데이터를 WebSocket으로 수신하는 엔드포인트
 @ecg_router.websocket("/ws/ecg")
