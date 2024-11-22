@@ -79,4 +79,4 @@ async def get_body_temp():
     if not temperature_data_queue:  # 데이터가 비어있는 경우
         return {"message": "저장된 체온 데이터가 없습니다."}  # 데이터가 없을 경우 메시지 반환
     # 큐에 저장된 데이터를 출력
-    return {"message": "Temp": list(temperature_data_queue)}
+    return {"message": "yes ", "Temp": list(temperature_data_queue)}
