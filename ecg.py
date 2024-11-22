@@ -1,9 +1,6 @@
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException
-from fastapi.responses import StreamingResponse
-from collections import deque
-import logging
-import io
-import matplotlib.pyplot as plt
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from collections import deque  # deque를 사용하기 위한 import
+import logging  # 로깅 기능을 사용하기 위한 import
 
 # FastAPI 애플리케이션과 연결하는 router 명 지정
 ecg_router = APIRouter()
@@ -27,35 +24,26 @@ def parse_ecg_data(raw_data_hex):
     try:
         raw_data_bytes = bytes.fromhex(raw_data_hex)
         data_values = []
-
-        # SOP, CMD, Data Size, EOP를 제외한 데이터 추출
-        # SOP(1바이트), CMD(1바이트), Data Size(2바이트), EOP(1바이트)
-        if len(raw_data_bytes) < 5:
-            logger.error("데이터 길이가 너무 짧습니다.")
-            return []
-
-        sop = raw_data_bytes[0]
-        cmd = raw_data_bytes[1]
-        data_size = int.from_bytes(raw_data_bytes[2:4], byteorder='little')
-        eop = raw_data_bytes[-1]
-        data_bytes = raw_data_bytes[4:-1]
-
-        logger.debug(f"SOP: {sop}, CMD: {cmd}, Data Size: {data_size}, EOP: {eop}")
-
-        # 데이터 길이 검증
-        if len(data_bytes) != data_size:
-            logger.error("데이터 크기가 일치하지 않습니다.")
-            return []
-
-        # 데이터 파싱
-        # 2바이트씩 읽어서 빅 엔디안으로 해석
-        for i in range(0, len(data_bytes), 2):
-            if i + 1 < len(data_bytes):
-                data_pair = data_bytes[i:i+2]
-                value = int.from_bytes(data_pair, byteorder='big')
-                data_values.append(value)
+        i = 0
+        while i < len(raw_data_bytes) - 1:
+            # 데이터 값 추출 (2바이트)
+            data_pair = raw_data_bytes[i:i+2]
+            data_value = int.from_bytes(data_pair, byteorder='big')
+            i += 2
+            # 마커 값 추출 (2바이트)
+            if i < len(raw_data_bytes) - 1:
+                marker_pair = raw_data_bytes[i:i+2]
+                marker_value = int.from_bytes(marker_pair, byteorder='big')
+                i += 2
             else:
-                logger.warning("남은 바이트가 충분하지 않습니다.")
+                marker_value = None
+            # 실제 값 계산
+            if marker_value is not None:
+                real_value = data_value - marker_value
+                data_values.append(real_value)
+            else:
+                # 마커 값이 없을 경우 데이터 값만 추가
+                data_values.append(data_value)
         return data_values
     except Exception as e:
         logger.error(f"데이터 파싱 중 오류 발생: {e}")
@@ -95,12 +83,20 @@ async def websocket_ecg(websocket: WebSocket):
     except Exception as e:
         logger.error(f"WebSocket 처리 중 오류 발생: {e}")
 
-# ECG 데이터를 조회하고 그래프로 반환하는 HTTP GET 엔드포인트
+# ECG 데이터를 조회하는 기존 HTTP GET 엔드포인트
 @ecg_router.get("/ecg")
 async def get_ecg():
     """
-    큐에 저장된 ECG 데이터를 파싱하고, 그래프로 반환하는 HTTP GET 엔드포인트.
+    큐에 저장된 ECG 데이터를 반환하는 HTTP GET 엔드포인트.
     """
+    if not ecg_data_queue:
+        return {"message": "No ECG data available.", "data": []}
+    return {"message": "ECG 데이터 조회 성공", "data": list(ecg_data_queue)}
+
+"""
+# ECG 데이터를 그래프로 반환하는 새로운 HTTP GET 엔드포인트
+@ecg_router.get("/ecg/graph")
+async def get_ecg_graph():
     if not ecg_data_queue:
         raise HTTPException(status_code=404, detail="No ECG data available.")
 
@@ -128,3 +124,4 @@ async def get_ecg():
     plt.close()
 
     return StreamingResponse(buf, media_type="image/png")
+"""
