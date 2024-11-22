@@ -44,7 +44,7 @@ async def websocket_spo2(websocket: WebSocket):
                         logger.debug(f"CMD ID: {cmd_id}, DATA SIZE: {data_size}")
 
              # 클라이언트에 수신 데이터 전송
-                await websocket.send_text(f"Received NIBP data - {data.hex()}")
+                await websocket.send_text(f"Received SPO2 data - {data.hex()}")
             except ValueError:
                 # 잘못된 데이터 형식 처리
                 logger.warning(f"Invalid data format received: {message}")
