@@ -26,7 +26,6 @@ async def websocket_nibp(websocket: WebSocket):
     await websocket.accept()
     try:
         while True:
-            # 데이터 분리 (수축기, 이완기)
             try:
                 #바이너리 데이터 수신
                 data = await websocket.receive_bytes()
