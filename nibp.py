@@ -9,6 +9,8 @@ logger = logging.getLogger("nibp_logger")
 # APIRouter 생성
 nibp_router = APIRouter()
 
+# NIBP 데이터 초기화
+nibp_data = None
 
 # 저장된 NIBP 값을 조회하는 엔드포인트 (GET)
 @nibp_router.get("/nibp")
