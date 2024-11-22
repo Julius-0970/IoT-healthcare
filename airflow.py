@@ -30,7 +30,7 @@ async def websocket_airflow(websocket: WebSocket):
 
                 # 데이터 길이 확인
                 if len(data) != 86:
-                    logger.warning(f"잘못된 데이터 크기 수신: {len(data)} bytes. 예상 크기: 10 bytes.")
+                    logger.warning(f"잘못된 데이터 크기 수신: {len(data)} bytes. 예상 크기: 86 bytes.")
                     await websocket.send_text("Invalid packet size. Expected 86 bytes.")
                     continue
                     
