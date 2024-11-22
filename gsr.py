@@ -44,7 +44,7 @@ async def websocket_gsr(websocket: WebSocket):
                     data_size = data[2]  # DATA SIZE 확인
                     logger.debug(f"CMD ID: {cmd_id}, DATA SIZE: {data_size}")
 
-                    # CMD와 데이터 크기를 통해 데이터 처리
+                    # CMD와 데이터 크기를 통해 GSR 데이터 처리
                     if cmd_id == 0xA3 and data_size == 8:  # 예시 CMD ID와 데이터 크기
                         gsr_value = int.from_bytes(data[3:7], byteorder="big")
                         logger.info(f"GSR 값: {gsr_value}")
@@ -77,4 +77,4 @@ async def get_gsr():
     """
     if not gsr_data_queue:  # 데이터가 비어있는 경우
         return {"message": "No GSR data available.", "data": []}
-    return {"message": "GSR 데이터 조회 성공", "data": list(gsr_data_queue)}
+    return {"message": "GSR 데이터 조회 성공", "data": list(gsr_data
