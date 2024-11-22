@@ -10,7 +10,7 @@ logger.setLevel(logging.DEBUG)  # 로그 레벨 설정
 temp_router = APIRouter()
 
 # 큐를 사용하여 body_temp 데이터를 저장
-temperature_data_queue = deque(maxlen=15000)  # 최대 크기 설정
+temperature_data_queue = deque(maxlen=1000)  # 최대 크기 설정
 
 @temp_router.websocket("/ws/body_temp")
 async def body_temp_websocket(websocket: WebSocket):
@@ -63,6 +63,7 @@ async def body_temp_websocket(websocket: WebSocket):
                     await websocket.send_text("Invalid packet format.")
             except WebSocketDisconnect:
                 logger.info("WebSocket 연결 해제됨.")
+                # 여기에 백엔드 서버 전송 로직.
                 break
             except Exception as e:
                 logger.error(f"데이터 수신 및 처리 중 오류 발생: {e}")
