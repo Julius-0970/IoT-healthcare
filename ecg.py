@@ -14,6 +14,9 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 # ECG 데이터를 실시간으로 송수신하기 위한 큐(데크) 생성
+ecg_data_queue = deque(maxlen=15000)  # 최대 15000개의 파싱된 데이터만 저장
+
+# ECG 데이터를 파싱하는 함수
 def parse_ecg_data(raw_data_hex):
     """
     수신된 원시 ECG 데이터(hex 문자열)를 파싱하여 실제 값 리스트로 변환합니다.
@@ -43,7 +46,6 @@ def parse_ecg_data(raw_data_hex):
     except Exception as e:
         logger.error(f"데이터 파싱 중 오류 발생: {e}")
         return []
-
 
 # ECG 데이터를 WebSocket으로 수신하는 엔드포인트
 @ecg_router.websocket("/ws/ecg")
