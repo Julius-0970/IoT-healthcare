@@ -13,7 +13,11 @@ logger.addHandler(handler)
 nibp_router = APIRouter()
 
 # NIBP 데이터 초기화
-nibp_data = None
+nibp_data = {
+    "systolic": None,   # 수축기 혈압
+    "diastolic": None,  # 이완기 혈압
+    "bpm": None         # 심박수
+}
 
 # 저장된 NIBP 값을 조회하는 엔드포인트 (GET)
 @nibp_router.get("/nibp")
@@ -21,7 +25,7 @@ async def get_nibp():
     """
     NIBP 데이터를 반환하는 HTTP GET 엔드포인트.
     """
-    if nibp_data is None:
+    if all(value is None for value in nibp_data.values()):
         return {"message": "No NIBP 데이터 없음."}  # 데이터가 없을 경우 메시지 반환
     return {"message": "NIBP 데이터 조회 성공", "NIBP": nibp_data}
 
@@ -30,6 +34,13 @@ async def get_nibp():
 async def websocket_nibp(websocket: WebSocket):
     """
     NIBP 데이터를 WebSocket으로 수신하고 처리하는 엔드포인트.
+
+    - 데이터는 6바이트 패킷으로 수신됩니다.
+    - 데이터 구조는 다음과 같다고 가정합니다:
+        1. 2바이트: 심박수 (BPM)
+        2. 2바이트: 수축기 혈압 (Systolic)
+        3. 2바이트: 이완기 혈압 (Diastolic)
+    - 데이터는 리틀 엔디안으로 인코딩되어 있음.
     """
     global nibp_data
     await websocket.accept()
@@ -42,12 +53,25 @@ async def websocket_nibp(websocket: WebSocket):
                 data = await websocket.receive_bytes()
                 logger.debug(f"수신된 데이터: {data.hex()}")
 
-                # 데이터를 저장
-                nibp_data = data.hex()
-                logger.info("수신된 데이터가 저장되었습니다.")
+                # 데이터 해석
+                if len(data) == 6:
+                    # 리틀 엔디안 형식으로 값 추출
+                    bpm = int.from_bytes(data[0:2], "little")
+                    systolic = int.from_bytes(data[2:4], "little")
+                    diastolic = int.from_bytes(data[4:6], "little")
+                    
+                    # NIBP 데이터 저장
+                    nibp_data["systolic"] = systolic
+                    nibp_data["diastolic"] = diastolic
+                    nibp_data["bpm"] = bpm
 
-                # 클라이언트에 수신 확인 메시지 전송
-                await websocket.send_text("NIBP data received successfully.")
+                    logger.info(f"NIBP 데이터 업데이트: 수축기={systolic}, 이완기={diastolic}, BPM={bpm}")
+
+                    # 클라이언트에 수신 확인 메시지 전송
+                    await websocket.send_text(f"NIBP data received: Systolic={systolic}, Diastolic={diastolic}, BPM={bpm}")
+                else:
+                    logger.warning("잘못된 데이터 패킷 길이. 6바이트 필요.")
+                    await websocket.send_text("Invalid data length. Expected 6 bytes.")
             except WebSocketDisconnect:
                 logger.info("WebSocket 연결 해제됨.")
                 break
