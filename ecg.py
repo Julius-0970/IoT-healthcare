@@ -1,5 +1,3 @@
-# ECG
-  
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from collections import deque  # deque를 사용하기 위한 import
 import logging  # 로깅 기능을 사용하기 위한 import
@@ -9,20 +7,24 @@ ecg_router = APIRouter()
 
 # 로깅 설정
 logger = logging.getLogger("ecg_logger")  # 현재 모듈의 로거 인스턴스 생성
+logger.setLevel(logging.DEBUG)  # 로그 레벨 설정
+handler = logging.StreamHandler()
+formatter = logging.Formatter("[%(asctime)s] %(levelname)s - %(message)s")
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 # ECG 데이터를 실시간으로 송수신하기 위한 큐(데크) 생성
-# 최대 416개의 최신 데이터만 저장하며, 초과 시 가장 오래된 데이터가 삭제됨
-ecg_data_queue = deque(maxlen=15000)
+ecg_data_queue = deque(maxlen=15000)  # 최대 15000개의 최신 데이터만 저장
 
 # ECG 데이터를 WebSocket으로 수신하는 엔드포인트
-
-# WebSocket 경로 설정
 @ecg_router.websocket("/ws/ecg")
 async def websocket_ecg(websocket: WebSocket):
+    """
+    ECG 데이터를 WebSocket으로 수신하고 처리하는 엔드포인트.
+    """
+    await websocket.accept()  # WebSocket 연결 수락
+    logger.info("WebSocket 연결 수락됨.")
 
-    # 클라이언트의 WebSocket 연결 수락 및 대기
-    await websocket.accept()  
-  
     try:
         while True:
             try:
@@ -30,35 +32,29 @@ async def websocket_ecg(websocket: WebSocket):
                 data = await websocket.receive_bytes()
                 logger.debug(f"수신된 데이터: {data.hex()}")
 
-                # 데이터 길이 확인
-                if len(data) != 86:
-                    logger.warning(f"잘못된 데이터 크기 수신: {len(data)} bytes. 예상 크기: 86 bytes.")
-                    await websocket.send_text("Invalid packet size. Expected 86 bytes.")
-                    continue
+                # 데이터를 큐에 저장
+                ecg_data_queue.append(data.hex())
+                logger.info("수신된 데이터가 큐에 저장되었습니다.")
 
-                    # 패킷 검증
-                    if data[0] == 0xF7 and data[-1] == 0xFA:
-                        cmd_id = data[1]  # CMD 확인
-                        data_size = data[2]  # DATA SIZE 확인
-                        logger.debug(f"CMD ID: {cmd_id}, DATA SIZE: {data_size}")
-
-             # 클라이언트에 수신 데이터 전송
-                await websocket.send_text(f"Received ECG data - {data.hex()}")
-            except ValueError:
-                # 잘못된 데이터 형식 처리
-                logger.warning(f"Invalid data format received: {message}")
-                await websocket.send_text("Error: Invalid data format.")
-
+                # 클라이언트에 수신 확인 메시지 전송
+                await websocket.send_text("ECG data received successfully.")
+            except WebSocketDisconnect:
+                logger.info("WebSocket 연결 해제됨.")
+                break
+            except Exception as e:
+                logger.error(f"데이터 처리 중 오류 발생: {e}")
+                await websocket.send_text("Internal server error.")
     except WebSocketDisconnect:
-        logger.info("WebSocket disconnected")
+        logger.info("WebSocket 연결 해제됨.")
     except Exception as e:
-        logger.error(f"ERROR: {e}")
-        # 클라이언트에게 오류 내용 전송
-        await websocket.send_text(f"An error occurred: {e}")
+        logger.error(f"WebSocket 처리 중 오류 발생: {e}")
 
 # ECG 데이터를 조회하기 위한 HTTP GET 엔드포인트
-@ecg_router.get("/ecg")  
+@ecg_router.get("/ecg")
 async def get_ecg():
+    """
+    큐에 저장된 ECG 데이터를 반환하는 HTTP GET 엔드포인트.
+    """
     if not ecg_data_queue:  # 데이터가 비어있는 경우
-        return {"message": "No ECG data available."}  # 데이터가 없을 경우 메시지 반환
-    return {"message": "ECG 서버 연결 완!", "ECG_DATA": list(ecg_data_queue)}  # 데이터가 있을 경우 메시지와 ECG 데이터 반환
+        return {"message": "No ECG data available.", "data": []}
+    return {"message": "ECG 데이터 조회 성공", "data": list(ecg_data_queue)}
