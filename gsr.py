@@ -32,32 +32,12 @@ async def websocket_gsr(websocket: WebSocket):
                 data = await websocket.receive_bytes()
                 logger.debug(f"수신된 데이터: {data.hex()}")
 
-                # 데이터 길이 확인
-                if len(data) != 86:
-                    logger.warning(f"잘못된 데이터 크기 수신: {len(data)} bytes. 예상 크기: 86 bytes.")
-                    await websocket.send_text("Invalid packet size. Expected 86 bytes.")
-                    continue
+                # 데이터를 큐에 저장
+                gsr_data_queue.append(data.hex())
+                logger.info("수신된 데이터가 큐에 저장되었습니다.")
 
-                # 패킷 검증
-                if data[0] == 0xF7 and data[-1] == 0xFA:
-                    cmd_id = data[1]  # CMD 확인
-                    data_size = data[2]  # DATA SIZE 확인
-                    logger.debug(f"CMD ID: {cmd_id}, DATA SIZE: {data_size}")
-
-                    # CMD와 데이터 크기를 통해 GSR 데이터 처리
-                    if cmd_id == 0xA3 and data_size == 8:  # 예시 CMD ID와 데이터 크기
-                        gsr_value = int.from_bytes(data[3:7], byteorder="big")
-                        logger.info(f"GSR 값: {gsr_value}")
-
-                        # 큐에 데이터 저장
-                        gsr_data_queue.append(gsr_value)
-                        await websocket.send_text("GSR data received successfully.")
-                    else:
-                        logger.warning(f"잘못된 CMD ID 또는 데이터 크기: CMD ID={cmd_id}, DATA SIZE={data_size}")
-                        await websocket.send_text("Invalid CMD ID or DATA SIZE.")
-                else:
-                    logger.warning("패킷의 시작 또는 끝 바이트가 올바르지 않음.")
-                    await websocket.send_text("Invalid packet format.")
+                # 클라이언트에 수신 확인 메시지 전송
+                await websocket.send_text("GSR data received successfully.")
             except WebSocketDisconnect:
                 logger.info("WebSocket 연결 해제됨.")
                 break
@@ -77,4 +57,4 @@ async def get_gsr():
     """
     if not gsr_data_queue:  # 데이터가 비어있는 경우
         return {"message": "No GSR data available.", "data": []}
-    return {"message": "GSR 데이터 조회 성공", "data": list(gsr_data
+    return {"message": "GSR 데이터 조회 성공", "data": list(gsr_data_queue)}
