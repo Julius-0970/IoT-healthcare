@@ -1,5 +1,3 @@
-#GSR
-
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from collections import deque  # deque를 사용하기 위한 import
 import logging  # 로깅 기능을 사용하기 위한 import
@@ -9,21 +7,25 @@ gsr_router = APIRouter()
 
 # 로깅 설정
 logger = logging.getLogger("gsr_logger")  # 현재 모듈의 로거 인스턴스 생성
+logger.setLevel(logging.DEBUG)  # 로그 레벨 설정
+handler = logging.StreamHandler()
+formatter = logging.Formatter("[%(asctime)s] %(levelname)s - %(message)s")
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 # GSR 데이터를 실시간으로 송수신하기 위한 큐(데크) 생성
-# 최대 416개의 최신 데이터만 저장하며, 초과 시 가장 오래된 데이터가 삭제됨
-gsr_data_queue = deque(maxlen=416)
+gsr_data_queue = deque(maxlen=416)  # 최대 416개의 최신 데이터만 저장
 
 # GSR 데이터를 WebSocket으로 수신하는 엔드포인트
-
-# WebSocket 경로 설정
 @gsr_router.websocket("/ws/gsr")
 async def websocket_gsr(websocket: WebSocket):
+    """
+    GSR 데이터를 WebSocket으로 수신하고 처리하는 엔드포인트.
+    """
+    await websocket.accept()  # WebSocket 연결 수락
+    logger.info("WebSocket 연결 수락됨.")
 
-    # 클라이언트의 WebSocket 연결 수락 및 대기
-    await websocket.accept()  
-    
-     try:
+    try:
         while True:
             try:
                 # 바이너리 데이터 수신
@@ -36,31 +38,43 @@ async def websocket_gsr(websocket: WebSocket):
                     await websocket.send_text("Invalid packet size. Expected 86 bytes.")
                     continue
 
-                    # 패킷 검증
-                    if data[0] == 0xF7 and data[-1] == 0xFA:
-                        cmd_id = data[1]  # CMD 확인
-                        data_size = data[2]  # DATA SIZE 확인
-                        logger.debug(f"CMD ID: {cmd_id}, DATA SIZE: {data_size}")
+                # 패킷 검증
+                if data[0] == 0xF7 and data[-1] == 0xFA:
+                    cmd_id = data[1]  # CMD 확인
+                    data_size = data[2]  # DATA SIZE 확인
+                    logger.debug(f"CMD ID: {cmd_id}, DATA SIZE: {data_size}")
 
-             # 클라이언트에 수신 데이터 전송
-                await websocket.send_text(f"Received GSR data - {data.hex()}")
-            except ValueError:
-                # 잘못된 데이터 형식 처리
-                logger.warning(f"Invalid data format received: {message}")
-                await websocket.send_text("Error: Invalid data format.")
+                    # CMD와 데이터 크기를 통해 데이터 처리
+                    if cmd_id == 0xA3 and data_size == 8:  # 예시 CMD ID와 데이터 크기
+                        gsr_value = int.from_bytes(data[3:7], byteorder="big")
+                        logger.info(f"GSR 값: {gsr_value}")
 
+                        # 큐에 데이터 저장
+                        gsr_data_queue.append(gsr_value)
+                        await websocket.send_text("GSR data received successfully.")
+                    else:
+                        logger.warning(f"잘못된 CMD ID 또는 데이터 크기: CMD ID={cmd_id}, DATA SIZE={data_size}")
+                        await websocket.send_text("Invalid CMD ID or DATA SIZE.")
+                else:
+                    logger.warning("패킷의 시작 또는 끝 바이트가 올바르지 않음.")
+                    await websocket.send_text("Invalid packet format.")
+            except WebSocketDisconnect:
+                logger.info("WebSocket 연결 해제됨.")
+                break
+            except Exception as e:
+                logger.error(f"데이터 처리 중 오류 발생: {e}")
+                await websocket.send_text("Internal server error.")
     except WebSocketDisconnect:
-        logger.info("WebSocket disconnected")
+        logger.info("WebSocket 연결 해제됨.")
     except Exception as e:
-        logger.error(f"ERROR: {e}")
-        # 클라이언트에게 오류 내용 전송
-        await websocket.send_text(f"An error occurred: {e}")
-
+        logger.error(f"WebSocket 처리 중 오류 발생: {e}")
 
 # GSR 데이터를 조회하기 위한 HTTP GET 엔드포인트
-@gsr_router.get("/gsr")  
+@gsr_router.get("/gsr")
 async def get_gsr():
+    """
+    큐에 저장된 GSR 데이터를 반환하는 HTTP GET 엔드포인트.
+    """
     if not gsr_data_queue:  # 데이터가 비어있는 경우
-        return {"message": "No GSR data available."}  # 데이터가 없을 경우 메시지 반환
-    return {"message": "GSR 서버 연결 완!", "GSR_DATA": list(gsr_data_queue)}  # 데이터가 있을 경우 메시지와 GSR 데이터 반환
-
+        return {"message": "No GSR data available.", "data": []}
+    return {"message": "GSR 데이터 조회 성공", "data": list(gsr_data_queue)}
