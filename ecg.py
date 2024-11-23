@@ -55,7 +55,7 @@ def parse_ecg_data(raw_data_hex):
             logger.error(f"잘못된 EOP: {eop:#04x}")
             return []
 
-        # 데이터 추출 (SOP, CMD, DATA_SIZE, EOP 제거)
+        # 데이터 추출 (SOP, CMD, DATA_SIZE, CHECKSUM, EOP 제거)
         data = raw_data_bytes[3:-3]  # 3바이트(SOP, CMD, DATA_SIZE) + 3바이트(CHECKSUM, EOP) 제외
         data_values = []
 
@@ -65,14 +65,18 @@ def parse_ecg_data(raw_data_hex):
                 logger.warning(f"데이터 청크가 4바이트에 미치지 않습니다: {data[i:]}")
                 break
 
-            # 각 4바이트에서 값을 추출
+            # 앞의 4자리 값
             byte1 = data[i]      # 첫 번째 바이트
             byte2 = data[i + 1]  # 두 번째 바이트
-            byte3 = data[i + 2]  # 세 번째 바이트
-            byte4 = data[i + 3]  # 네 번째 바이트
 
-            # 값 계산: 각 바이트를 개별적으로 더함
-            real_value = byte1 + byte2 + byte3 + byte4
+            # 고정된 4자리 값
+            fixed_value = int.from_bytes(data[i + 2:i + 4], byteorder="big")
+
+            # 앞의 4자리 값 계산: byte1 + byte2
+            prefix_sum = byte1 + byte2
+
+            # 최종 계산: prefix_sum + 고정된 4자리 값
+            real_value = prefix_sum + fixed_value
 
             # 값 저장
             data_values.append(real_value)
