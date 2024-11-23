@@ -20,7 +20,7 @@ spo2_data_queue = deque(maxlen=100)  # 최대 100개의 최신 데이터만 저�
 
 def parse_spo2_packet(packet: bytes):
     """
-    리틀 엔디안으로 인코딩된 spO2 패킷을 해석하여 데이터를 반환
+    리틀 엔디안으로 인코딩된 SpO2 패킷을 해석하여 데이터를 반환.
     - SOP: packet[0]
     - CMD: packet[1]
     - DATA_SIZE: packet[2]
@@ -28,29 +28,32 @@ def parse_spo2_packet(packet: bytes):
     - EOP: packet[-1]
     """
     # 패킷 검증
-    if len(packet) < 7 or packet[0] != 0xF7 or packet[-1] != 0xFA:
+    if len(packet) < 9 or packet[0] != 0xF7 or packet[-1] != 0xFA:
         raise ValueError("Invalid packet format")
 
     # 필드 추출
-    sop = packet[0]
-    cmd = packet[1]
-    data_size = packet[2]
+    sop = packet[0]  # SOP (Start of Packet)
+    cmd = packet[1]  # Command
+    data_size = packet[2]  # Data Size
 
     # 데이터 검증
-    if data_size != 4 or len(packet[3:3 + data_size]) != data_size:
+    if data_size != 4:
         raise ValueError("Invalid DATA_SIZE")
 
-    # 리틀 엔디안 데이터 해석
-    spo2 = int.from_bytes(packet[5:7], byteorder="little")  # 6200 -> 98
-    BPM = int.from_bytes(packet[3:5], byteorder="little")  # 005a -> 90
+    # 데이터 추출
+    bpm = packet[4]  # 5번째 바이트 (BPM)
+    spo2 = packet[5]  # 6번째 바이트 (SpO2)
 
+    # EOP 확인
     eop = packet[-1]
+    if eop != 0xFA:
+        raise ValueError("Invalid EOP")
 
+    # 데이터 처리 결과 반환
     return {
-        "SpO2": spo2,
-        "BPM": BPM,
+        "BPM": bpm,    # 추출된 BPM 값
+        "SpO2": spo2,  # 추출된 SpO2 값
     }
-
 
 # spO2 데이터를 WebSocket으로 수신하는 엔드포인트
 @spo2_router.websocket("/ws/spo2")
