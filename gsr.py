@@ -45,7 +45,7 @@ def parse_gsr_data(raw_data_hex):
         if sop != 0xf7:
             logger.error(f"잘못된 SOP: {sop:#04x}")
             return []
-        if cmd != 0x12:
+        if cmd != 0x82:
             logger.error(f"잘못된 CMD: {cmd:#04x}")
             return []
         if data_size != 0x50:
