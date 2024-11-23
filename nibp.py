@@ -56,19 +56,19 @@ async def websocket_nibp(websocket: WebSocket):
                 # 데이터 해석
                 if len(data) == 10:
                     # 리틀 엔디안 형식으로 값 추출
-                    diastolic = int.from_bytes(data[4:6], "little")
-                    systolic = int.from_bytes(data[6:8], "little")
-                    pulse = int.from_bytes(data[8:10], "little")
+                    diastolic = data[5]  # 6번째 바이트 (diastolic)
+                    systolic = data[6]   # 7번째 바이트 (systolic)
+                    pulse = data[7]      # 8번째 바이트 (pulse)
                     
                     # NIBP 데이터 저장
                     nibp_data["systolic"] = systolic
                     nibp_data["diastolic"] = diastolic
-                    nibp_data["bpm"] = pulse
+                    nibp_data["pulse"] = pulse
 
-                    logger.info(f"NIBP 데이터 업데이트: 수축기={systolic}, 이완기={diastolic}, BPM={pulse}")
+                    logger.info(f"NIBP 데이터 업데이트: 수축기={systolic}, 이완기={diastolic}, Pulse/min={pulse}")
 
                     # 클라이언트에 수신 확인 메시지 전송
-                    await websocket.send_text(f"NIBP data received: Systolic={systolic}, Diastolic={diastolic}, BPM={bpm}")
+                    await websocket.send_text(f"NIBP data received: Systolic={systolic}, Diastolic={diastolic}, Pulse/min={pulse}")
                 else:
                     logger.warning("잘못된 데이터 패킷 길이. 10바이트 필요.")
                     await websocket.send_text("Invalid data length. Expected 10 bytes.")
