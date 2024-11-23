@@ -56,9 +56,9 @@ async def websocket_nibp(websocket: WebSocket):
                 # 데이터 해석
                 if len(data) == 10:
                     # 리틀 엔디안 형식으로 값 추출
-                    diastolic = data[5]  # 6번째 바이트 (diastolic)
-                    systolic = data[6]   # 7번째 바이트 (systolic)
-                    pulse = data[7]      # 8번째 바이트 (pulse)
+                    diastolic = data[4]  # 5번째 바이트 (diastolic)
+                    systolic = data[5]   # 6번째 바이트 (systolic)
+                    pulse = data[6]      # 7번째 바이트 (pulse)
                     
                     # NIBP 데이터 저장
                     nibp_data["systolic"] = systolic
