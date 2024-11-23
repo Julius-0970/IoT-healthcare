@@ -66,13 +66,20 @@ def parse_airflow_data(raw_data_hex):
                 logger.warning(f"데이터 청크가 4바이트에 미치지 않습니다: {data[i:]}")
                 break
 
-            # 4바이트 데이터 추출
-            byte1 = data[i]
-            byte2 = data[i + 1]
+           # 앞의 4자리 값
+            byte1 = data[i]      # 첫 번째 바이트
+            byte2 = data[i + 1]  # 두 번째 바이트
+
+            # 고정된 4자리 값
             fixed_value = int.from_bytes(data[i + 2:i + 4], byteorder="big")
 
-            # 데이터 계산
-            real_value = byte1 + byte2 + fixed_value
+            # 앞의 4자리 값 계산: byte1 + byte2
+            prefix_sum = byte1 + byte2
+
+            # 최종 계산: prefix_sum + 고정된 4자리 값
+            real_value = prefix_sum + fixed_value
+
+            # 값 저장
             data_values.append(real_value)
 
         logger.info(f"파싱된 데이터 값 수: {len(data_values)}")
