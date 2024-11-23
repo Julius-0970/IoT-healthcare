@@ -56,7 +56,7 @@ def parse_ecg_data(raw_data_hex):
             return []
 
         # 데이터 추출 (SOP, CMD, DATA_SIZE, CHECKSUM, EOP 제거)
-        data = raw_data_bytes[3:-1]  # 3바이트(SOP, CMD, DATA_SIZE) + 3바이트(CHECKSUM, EOP) 제외
+        data = raw_data_bytes[3:-1]  # 3바이트(SOP, CMD, DATA_SIZE) + 1바이트(EOP) 제외
         data_values = []
 
         # 데이터를 4바이트씩 나누어 파싱
