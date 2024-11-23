@@ -22,7 +22,7 @@ def parse_emg_data(raw_data_hex):
     수신된 원시 EMG 데이터(hex 문자열)를 파싱하여 실제 값 리스트로 변환합니다.
     패킷 구조:
     - SOP (1바이트): f7
-    - CMD (1바이트): 12
+    - CMD (1바이트): 22
     - DATA_SIZE (1바이트): 50 (16진수) -> 80 (10진수)
     - DATA (80바이트, 4바이트씩 나뉨)
     - EOP (1바이트): fa
@@ -45,7 +45,7 @@ def parse_emg_data(raw_data_hex):
         if sop != 0xf7:
             logger.error(f"잘못된 SOP: {sop:#04x}")
             return []
-        if cmd != 0x12:
+        if cmd != 0x22:
             logger.error(f"잘못된 CMD: {cmd:#04x}")
             return []
         if data_size != 0x50:
