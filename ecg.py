@@ -24,8 +24,7 @@ def parse_ecg_data(raw_data_hex):
     - SOP (1바이트): f7
     - CMD (1바이트): 12
     - DATA_SIZE (1바이트): 50 (16진수) -> 80 (10진수)
-    - DATA (80바이트)
-    - CHECKSUM (2바이트)
+    - DATA (80바이트, 4바이트씩 나뉨)
     - EOP (1바이트): fa
     """
     try:
@@ -37,14 +36,12 @@ def parse_ecg_data(raw_data_hex):
             logger.error(f"잘못된 패킷 길이: {packet_length} bytes (예상: 86 bytes)")
             return []
 
-        # 패킷 헤더 및 트레일러 추출
+        # 패킷 헤더 및 트레일러 검증
         sop = raw_data_bytes[0]
         cmd = raw_data_bytes[1]
         data_size = raw_data_bytes[2]
-        checksum = raw_data_bytes[83:85]  # 2바이트 체크섬
-        eop = raw_data_bytes[85]
+        eop = raw_data_bytes[-1]
 
-        # 패킷 구조 검증
         if sop != 0xf7:
             logger.error(f"잘못된 SOP: {sop:#04x}")
             return []
@@ -58,33 +55,26 @@ def parse_ecg_data(raw_data_hex):
             logger.error(f"잘못된 EOP: {eop:#04x}")
             return []
 
-        # DATA 추출
-        expected_data_length = data_size  # 80바이트
-        actual_data_length = packet_length - 6  # SOP + CMD + DATA_SIZE + CHECKSUM + EOP = 6바이트
-        if actual_data_length != expected_data_length:
-            logger.error(f"DATA_SIZE와 실제 데이터 크기가 일치하지 않습니다. DATA_SIZE: {data_size}, 실제: {actual_data_length}")
-            return []
-
-        data = raw_data_bytes[3:83]  # DATA 부분 추출 (80바이트)
-
+        # 데이터 추출 (SOP, CMD, DATA_SIZE, EOP 제거)
+        data = raw_data_bytes[3:-3]  # 3바이트(SOP, CMD, DATA_SIZE) + 3바이트(CHECKSUM, EOP) 제외
         data_values = []
+
+        # 데이터를 4바이트씩 나누어 파싱
         for i in range(0, len(data), 4):
             if i + 4 > len(data):
                 logger.warning(f"데이터 청크가 4바이트에 미치지 않습니다: {data[i:]}")
                 break
 
-            # 4바이트씩 분할
-            low_bytes = data[i:i+2]
-            high_bytes = data[i+2:i+4]
+            # 각 4바이트에서 값을 추출
+            byte1 = data[i]      # 첫 번째 바이트
+            byte2 = data[i + 1]  # 두 번째 바이트
+            byte3 = data[i + 2]  # 세 번째 바이트
+            byte4 = data[i + 3]  # 네 번째 바이트
 
-            # Big Endian으로 변환
-            low = int.from_bytes(low_bytes, byteorder='big')
-            high = int.from_bytes(high_bytes, byteorder='big')
+            # 값 계산: 각 바이트를 개별적으로 더함
+            real_value = byte1 + byte2 + byte3 + byte4
 
-            # 실제 값 계산
-            real_value = (high << 8) + low  # (high * 256) + low
-
-            # 유효 값 범위 제한 제거: 모든 real_value를 저장
+            # 값 저장
             data_values.append(real_value)
 
         logger.info(f"파싱된 데이터 값 수: {len(data_values)}")
@@ -96,6 +86,7 @@ def parse_ecg_data(raw_data_hex):
     except Exception as e:
         logger.error(f"데이터 파싱 중 오류 발생: {e}")
         return []
+
 
 # ECG 데이터를 WebSocket으로 수신하는 엔드포인트
 @ecg_router.websocket("/ws/ecg")
