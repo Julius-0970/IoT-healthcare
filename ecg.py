@@ -56,7 +56,7 @@ def parse_ecg_data(raw_data_hex):
             return []
 
         # 데이터 추출 (SOP, CMD, DATA_SIZE, CHECKSUM, EOP 제거)
-        data = raw_data_bytes[3:-3]  # 3바이트(SOP, CMD, DATA_SIZE) + 3바이트(CHECKSUM, EOP) 제외
+        data = raw_data_bytes[3:-1]  # 3바이트(SOP, CMD, DATA_SIZE) + 3바이트(CHECKSUM, EOP) 제외
         data_values = []
 
         # 데이터를 4바이트씩 나누어 파싱
@@ -91,7 +91,6 @@ def parse_ecg_data(raw_data_hex):
         logger.error(f"데이터 파싱 중 오류 발생: {e}")
         return []
 
-
 # ECG 데이터를 WebSocket으로 수신하는 엔드포인트
 @ecg_router.websocket("/ws/ecg")
 async def websocket_ecg(websocket: WebSocket):
@@ -103,8 +102,8 @@ async def websocket_ecg(websocket: WebSocket):
 
     try:
         while True:
+            # 바이너리 데이터 수신
             try:
-                # 바이너리 데이터 수신
                 data = await websocket.receive_bytes()
                 raw_data_hex = data.hex()
                 logger.debug(f"수신된 데이터: {raw_data_hex}")
@@ -114,19 +113,17 @@ async def websocket_ecg(websocket: WebSocket):
                 if parsed_values:
                     ecg_data_queue.extend(parsed_values)
                     logger.info(f"{len(parsed_values)}개의 파싱된 데이터가 큐에 저장되었습니다.")
+                    await websocket.send_text(f"Successfully parsed {len(parsed_values)} ECG values.")
                 else:
                     logger.warning("파싱된 데이터가 없습니다.")
+                    await websocket.send_text("No valid ECG data parsed.")
 
-                # 클라이언트에 수신 확인 메시지 전송
-                await websocket.send_text("ECG data received and parsed successfully.")
             except WebSocketDisconnect:
                 logger.info("WebSocket 연결 해제됨.")
                 break
             except Exception as e:
                 logger.error(f"데이터 처리 중 오류 발생: {e}")
                 await websocket.send_text("Internal server error.")
-    except WebSocketDisconnect:
-        logger.info("WebSocket 연결 해제됨.")
     except Exception as e:
         logger.error(f"WebSocket 처리 중 오류 발생: {e}")
 
@@ -137,5 +134,13 @@ async def get_ecg():
     큐에 저장된 파싱된 ECG 데이터를 반환하는 HTTP GET 엔드포인트.
     """
     if not ecg_data_queue:
-        return {"message": "No ECG data available.", "data": []}
-    return {"message": "ECG 데이터 조회 성공", "data": list(ecg_data_queue)}
+        return {
+            "status": "error",
+            "message": "No ECG data available.",
+            "data": []
+        }
+    return {
+        "status": "success",
+        "message": "ECG 데이터 조회 성공",
+        "data": list(ecg_data_queue)
+    }
