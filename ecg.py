@@ -80,11 +80,14 @@ async def websocket_ecg(websocket: WebSocket):
                     ecg_data_queue.extend(parsed_values)
                     logger.info(f"{len(parsed_values)}개의 파싱된 데이터가 큐에 저장되었습니다.")
 
-                    # 큐가 가득 찼을 때 데이터 전송
-                    if len(ecg_data_queue) == ecg_data_queue.maxlen:
-                        await send_data_to_backend("ecg", ecg_data_queue)
-
-                    await websocket.send_text(f"Successfully parsed {len(parsed_values)} ECG values.")
+                # 큐가 가득 찼을 때 데이터 전송
+                if len(ecg_data_queue) == ecg_data_queue.maxlen:
+                    await send_data_to_backend("ecg", ecg_data_queue)
+                
+                    # WebSocket 연결 종료
+                    await websocket.close(code=1000, reason="Queue reached maximum capacity")
+                    logger.info("WebSocket 연결 종료: 큐가 최대 용량에 도달했습니다.")
+                    return
                 else:
                     logger.warning("파싱된 데이터가 없습니다.")
                     await websocket.send_text("No valid ECG data parsed.")
