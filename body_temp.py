@@ -1,6 +1,7 @@
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from collections import deque
 from logger import get_logger  # 별도의 로깅 설정 가져오기
+from send_data_back import send_data_to_backend # 백엔드로의 전송로직
 
 # 로거 생성
 logger = get_logger("temp_logger")
@@ -9,73 +10,98 @@ logger = get_logger("temp_logger")
 temp_router = APIRouter()
 
 # 큐를 사용하여 body_temp 데이터를 저장
-temperature_data_queue = deque(maxlen=1000)  # 최대 크기 설정
+temperature_data_queue = deque(maxlen=100000)  # 최대 크기 설정
+
+
+def parse_temp_data(raw_data_hex):
+    """
+    수신된 원시 ECG 데이터(hex 문자열)를 파싱하여 실제 값 리스트로 변환합니다.
+    """
+
+    raw_data_bytes = bytes.fromhex(raw_data_hex)
+    packet_length = len(raw_data_bytes)
+
+    if packet_length != 10:
+        raise ValueError(f"잘못된 패킷 길이: {packet_length} bytes (예상: 10 bytes)")
+
+    # 패킷 헤더 및 트레일러 검증
+    sop = raw_data_bytes[0]
+    cmd = raw_data_bytes[1]
+    data_size = raw_data_bytes[2]
+    eop = raw_data_bytes[-1]
+
+    if sop != 0xF7:
+        raise ValueError(f"잘못된 SOP: {sop:#04x}")
+    if cmd != 0xa2:
+        raise ValueError(f"잘못된 CMD: {cmd:#04x}")
+    if data_size != 0x04:
+        raise ValueError(f"잘못된 DATA_SIZE: {data_size} (예상: 0x04)")
+    if eop != 0xFA:
+        raise ValueError(f"잘못된 EOP: {eop:#04x}")
+
+    logger.debug(f"CMD: {cmd}, DATA SIZE: {data_size}")
+
+    # 온도 데이터 파싱
+    high_byte = int.from_bytes(raw_data_bytes[3:5], byteorder="big")
+    low_byte = int.from_bytes(raw_data_bytes[5:7], byteorder="big")
+    temperature_raw = high_byte + low_byte
+    return temperature_raw / 100.0
+
 
 @temp_router.websocket("/ws/body_temp")
-async def body_temp_websocket(websocket: WebSocket):
+async def temp_websocket_handler(websocket: WebSocket):
     """
-    Body Temperature 센서 데이터를 수신하고 저장하는 WebSocket 엔드포인트.
-    - 클라이언트로부터 바이너리 데이터를 수신하고 처리.
+    WebSocket을 통해 체온 데이터를 수신하고 처리하는 핸들러.
     """
     await websocket.accept()
     logger.info("WebSocket 연결 수락됨.")
 
     try:
+        # 클라이언트로부터 username 수신
+        username = await websocket.receive_text()
+        logger.info(f"수신된 사용자 이름: {username}")
+
         while True:
             try:
-                # 바이너리 데이터 수신
                 data = await websocket.receive_bytes()
-                logger.debug(f"수신된 데이터: {data.hex()}")
+                raw_data_hex = data.hex()
+                logger.debug(f"수신된 데이터: {raw_data_hex}")
 
-                # 데이터 길이 확인
-                if len(data) != 10:
-                    logger.warning(f"잘못된 데이터 크기 수신: {len(data)} bytes. 예상 크기: 10 bytes.")
-                    await websocket.send_text("Invalid packet size. Expected 10 bytes.")
-                    continue
+                # 데이터 파싱
+                temperature = parse_temp_data(data)
+                temperature_data_queue.append(temperature)
+                logger.info(f"큐에 데이터 저장됨: {temperature}")
+                await websocket.send_text("Temperature data received successfully.")
 
-                # 패킷 검증
-                if data[0] == 0xF7 and data[-1] == 0xFA:
-                    cmd_id = data[1]  # CMD 확인
-                    data_size = data[2]  # DATA SIZE 확인
-                    logger.debug(f"CMD ID: {cmd_id}, DATA SIZE: {data_size}")
-
-                    # CMD와 데이터 크기를 통해 온도 데이터인지 확인
-                    if cmd_id == 0xA2 and data_size == 4:
-                        try:
-                            high_byte = int.from_bytes(data[3:5], byteorder='big')  # 상위 2바이트
-                            low_byte = int.from_bytes(data[5:7], byteorder='big')   # 하위 2바이트
-                            logger.debug(f"High Byte: {high_byte}, Low Byte: {low_byte}")
-
-                            temperature_raw = high_byte + low_byte
-                            temperature = temperature_raw / 100.0
-                            temperature_data_queue.append(temperature)
-                            logger.info(f"큐에 데이터 저장됨: {temperature}")
-                            await websocket.send_text("Temperature data received successfully.")
-                        except IndexError as ie:
-                            logger.error(f"데이터 해석 오류: {ie}")
-                            await websocket.send_text("Data parsing error.")
-                    else:
-                        logger.warning(f"잘못된 CMD ID 또는 데이터 크기: CMD ID={cmd_id}, DATA SIZE={data_size}")
-                        await websocket.send_text("Invalid CMD ID or DATA SIZE.")
-                else:
-                    logger.warning("패킷의 시작 또는 끝 바이트가 올바르지 않음.")
-                    await websocket.send_text("Invalid packet format.")
+                # 큐가 가득 찼을 때 데이터 전송
+                if len(temperature_data_queue) == temperature_data_queue.maxlen:
+                    logger.info("큐가 최대 용량에 도달했습니다. 데이터를 서버로 전송합니다.")
+                    # 데이터 전송
+                    await send_data_to_backend(username, "temp", temperature_data_queue)
+                    
+                    # 전송 성공 시 큐 초기화
+                    temperature_data_queue.clear()
+                    logger.info("TEMP 데이터 큐가 초기화되었습니다.")
+            except ValueError as ve:
+                logger.warning(f"패킷 처리 오류: {ve}")
+                await websocket.send_text(str(ve))
             except WebSocketDisconnect:
                 logger.info("WebSocket 연결 해제됨.")
-                # 여기에 백엔드 서버 전송 로직.
                 break
             except Exception as e:
-                logger.error(f"데이터 수신 및 처리 중 오류 발생: {e}")
+                logger.error(f"데이터 처리 중 오류 발생: {e}")
                 await websocket.send_text("Internal server error.")
     except WebSocketDisconnect:
         logger.info("WebSocket 연결 해제됨.")
     except Exception as e:
         logger.error(f"WebSocket 처리 중 오류 발생: {e}")
 
-# 저장된 body_temp 값을 조회하는 엔드포인트 (GET)
-@temp_router.get("/body_temp")  
+
+@temp_router.get("/body_temp")
 async def get_body_temp():
-    if not temperature_data_queue:  # 데이터가 비어있는 경우
-        return {"message": "저장된 체온 데이터가 없습니다."}  # 데이터가 없을 경우 메시지 반환
-    # 큐에 저장된 데이터를 출력
-    return {"message": "yes ", "Temp": list(temperature_data_queue)}
+    """
+    저장된 체온 데이터를 조회하는 엔드포인트.
+    """
+    if not temperature_data_queue:
+        return {"message": "저장된 체온 데이터가 없습니다."}
+    return {"message": "yes", "Temp": list(temperature_data_queue)}
