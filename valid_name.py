@@ -8,7 +8,7 @@ logger = get_logger("valid_logger")
 valid_router = APIRouter()
 
 # 테스트용 사용자 데이터베이스
-valid_users = {"user1", "user2", "user3"}
+valid_users = {"user1", "user2", "user3", "example_user"}
 
 @valid_router.websocket("/ws/validate_user")
 async def validate_user(websocket: WebSocket):
