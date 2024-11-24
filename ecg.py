@@ -66,6 +66,7 @@ async def websocket_ecg(websocket: WebSocket):
     """
     await websocket.accept()
     logger.info("WebSocket 연결 수락됨.")
+    username = user2
 
     try:
         while True:
@@ -82,7 +83,7 @@ async def websocket_ecg(websocket: WebSocket):
 
                 # 큐가 가득 찼을 때 데이터 전송
                 if len(ecg_data_queue) == ecg_data_queue.maxlen:
-                    await send_data_to_backend("ecg", ecg_data_queue)
+                    await send_data_to_backend(username, "ecg", ecg_data_queue)
                 
                     # WebSocket 연결 종료
                     await websocket.close(code=1000, reason="Queue reached maximum capacity")
