@@ -81,7 +81,7 @@ async def websocket_ecg(websocket: WebSocket):
 
                     # 큐가 가득 찼을 때 데이터 전송
                     if len(ecg_data_queue) == ecg_data_queue.maxlen:
-                        await send_ecg_data_to_backend()
+                        await send_ecg_data_to_backend(ecg, ecg_data_queue)
 
                     await websocket.send_text(f"Successfully parsed {len(parsed_values)} ECG values.")
                 else:
