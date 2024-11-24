@@ -1,20 +1,13 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from collections import deque  # deque를 사용하기 위한 import
-import logging  # 로깅 기능을 사용하기 위한 import
+from logger import get_logger  # 별도의 로깅 설정 가져오기
 
 # FastAPI 애플리케이션과 연결하는 router 명 지정
 airflow_router = APIRouter()
 
-# 로깅 설정
-logger = logging.getLogger("airflow_logger")  # 현재 모듈의 로거 인스턴스 생성
-logger.setLevel(logging.DEBUG)  # 로그 레벨 설정
-handler = logging.StreamHandler()
-formatter = logging.Formatter("[%(asctime)s] %(levelname)s - %(message)s")
-handler.setFormatter(formatter)
-logger.addHandler(handler)
 
 # Airflow 데이터를 실시간으로 송수신하기 위한 큐(데크) 생성
-airflow_data_queue = deque(maxlen=416)  # 최대 416개의 최신 데이터만 저장
+airflow_data_queue = deque(maxlen=15000)  # 최대 416개의 최신 데이터만 저장
 
 # Airflow 데이터를 파싱하는 함수
 def parse_airflow_data(raw_data_hex):
