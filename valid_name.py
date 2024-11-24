@@ -1,6 +1,5 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from logger import get_logger  # 별도의 로깅 설정 가져오기
-from user_state import current_username, lock  # 상태 변수와 Lock 가져오기
 
 # 로거 생성
 logger = get_logger("valid_logger")
@@ -21,18 +20,6 @@ async def validate_user(websocket: WebSocket):
         while True:
             user_name = await websocket.receive_text()
             logger.info(f"받은 사용자 이름: {user_name}")
-
-            # Lock 상태 확인
-            if lock.locked():
-                logger.warning("Lock이 이미 획득된 상태입니다. 대기 중...")
-
-            # 동시성 보호 및 글로벌 변수 업데이트
-            async with lock:
-                logger.info("Lock을 획득했습니다.")
-                global current_username
-                current_username = user_name
-                logger.info(f"current_username이 업데이트되었습니다: {current_username}")
-            logger.info("Lock이 해제되었습니다.")
 
             # 사용자 유효성 검사
             if user_name in valid_users:
