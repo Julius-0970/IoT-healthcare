@@ -66,9 +66,12 @@ async def websocket_ecg(websocket: WebSocket):
     """
     await websocket.accept()
     logger.info("WebSocket 연결 수락됨.")
-    username = "example_user111"
 
     try:
+        # 클라이언트로부터 username 수신
+        username = await websocket.receive_text()
+        logger.info(f"수신된 사용자 이름: {username}")
+        
         while True:
             try:
                 data = await websocket.receive_bytes()
