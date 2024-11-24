@@ -1,17 +1,9 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from collections import deque
-import logging
+from logger import get_logger  # 별도의 로깅 설정 가져오기
 
 # FastAPI 애플리케이션과 연결하는 router 명 지정
 eog_router = APIRouter()
-
-# 로깅 설정
-logger = logging.getLogger("eog_logger")  # 현재 모듈의 로거 인스턴스 생성
-logger.setLevel(logging.DEBUG)  # 로그 레벨 설정
-handler = logging.StreamHandler()
-formatter = logging.Formatter("[%(asctime)s] %(levelname)s - %(message)s")
-handler.setFormatter(formatter)
-logger.addHandler(handler)
 
 # EOG 데이터를 실시간으로 송수신하기 위한 큐(데크) 생성
 eog_data_queue = deque(maxlen=15000)  # 최대 15000개의 최신 데이터만 저장
