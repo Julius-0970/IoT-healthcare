@@ -75,9 +75,13 @@ async def websocket_ecg(websocket: WebSocket):
                     ecg_data_queue.extend(parsed_values)
                     logger.info(f"{len(parsed_values)}개의 파싱된 데이터가 큐에 저장되었습니다.")
 
+                    # 현재 사용자 이름 가져오기
+                    async with lock:  # 동시성 보호
+                        user = current_username
+
                     # 큐가 가득 찼을 때 데이터 전송
                     if len(ecg_data_queue) == ecg_data_queue.maxlen:
-                        await send_data_to_backend(current_username, "ecg", ecg_data_queue)
+                        await send_data_to_backend(user, "ecg", ecg_data_queue)
 
                     await websocket.send_text(f"Successfully parsed {len(parsed_values)} ECG values.")
                 else:
@@ -89,8 +93,10 @@ async def websocket_ecg(websocket: WebSocket):
                 
                 # 연결이 끊겼을 때 큐에 남은 데이터를 처리
                 if ecg_data_queue:
+                    async with lock:  # 동시성 보호
+                        user = current_username
                     logger.info(f"끊긴 후 남은 데이터 {len(ecg_data_queue)}개 전송 시도")
-                    await send_data_to_backend(current_username, "ecg", ecg_data_queue)
+                    await send_data_to_backend(user, "ecg", ecg_data_queue)
                 break
             except Exception as e:
                 logger.error(f"데이터 처리 중 오류 발생: {e}")
