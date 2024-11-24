@@ -66,7 +66,7 @@ async def websocket_ecg(websocket: WebSocket):
     """
     await websocket.accept()
     logger.info("WebSocket 연결 수락됨.")
-    username = "example_user1"
+    username = "example_user"
 
     try:
         while True:
