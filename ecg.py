@@ -14,6 +14,7 @@ ecg_router = APIRouter()
 # ECG 데이터를 실시간으로 송수신하기 위한 큐(데크) 생성
 ecg_data_queue = deque(maxlen=15000)  # 최대 15000개의 데이터를 저장
 
+
 # ECG 데이터를 파싱하는 함수
 def parse_ecg_data(raw_data_hex):
     try:
@@ -61,6 +62,11 @@ async def websocket_ecg(websocket: WebSocket):
     """
     await websocket.accept()
     logger.info("WebSocket 연결 수락됨.")
+    
+    # 현재 사용자 이름 가져오기
+    async with lock:  # 동시성 보호
+        # user 정보 읽어오기
+        user = current_username
 
     try:
         while True:
@@ -74,10 +80,6 @@ async def websocket_ecg(websocket: WebSocket):
                 if parsed_values:
                     ecg_data_queue.extend(parsed_values)
                     logger.info(f"{len(parsed_values)}개의 파싱된 데이터가 큐에 저장되었습니다.")
-
-                    # 현재 사용자 이름 가져오기
-                    async with lock:  # 동시성 보호
-                        user = current_username
 
                     # 큐가 가득 찼을 때 데이터 전송
                     if len(ecg_data_queue) == ecg_data_queue.maxlen:
