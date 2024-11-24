@@ -3,7 +3,10 @@ import json  # JSON 확인을 위한 모듈 추가
 from logger import get_logger  # 별도의 로깅 설정 가져오기
 from user_state import current_username, lock  # 상태 변수와 Lock 가져오기
 
+global current_username 
+
 logger = get_logger("data_sender")
+
 
 # 서버 URL 매핑 테이블
 SENSOR_URL_MAPPING = {
