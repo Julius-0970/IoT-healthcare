@@ -6,6 +6,10 @@ from logger import get_logger  # 별도의 로깅 설정 가져오기
 # FastAPI 애플리케이션과 연결하는 router 명 지정
 spo2_router = APIRouter()
 
+# 로거 생성
+logger = get_logger("spo2_logger")
+
+
 # spO2 데이터를 실시간으로 송수신하기 위한 큐(데크) 생성
 spo2_data_queue = deque(maxlen=100)  # 최대 100개의 최신 데이터만 저장
 
