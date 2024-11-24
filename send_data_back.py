@@ -10,7 +10,7 @@ logger = get_logger("data_sender")
 
 # 서버 URL 매핑 테이블
 SENSOR_URL_MAPPING = {
-    "ecg": "https://example.com/api/ecg",
+    "ecg": "https://reptile-promoted-publicly.ngrok-free.app/ws/ecg",
     "gsr": "https://example.com/api/gsr",
     "spo2": "https://example.com/api/spo2",
     "airflow": "https://example.com/api/airflow",
