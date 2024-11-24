@@ -97,28 +97,44 @@ async def websocket_eog(websocket: WebSocket):
     logger.info("WebSocket 연결 수락됨.")
 
     try:
+        # 클라이언트로부터 username 수신
+        username = await websocket.receive_text()
+        logger.info(f"수신된 사용자 이름: {username}")
+        
         while True:
             try:
                 # 바이너리 데이터 수신
                 data = await websocket.receive_bytes()
+                raw_data_hex = data.hex()
                 logger.debug(f"수신된 데이터: {data.hex()}")
 
-                # 데이터를 큐에 저장
-                eog_data_queue.append(data.hex())
-                logger.info("수신된 데이터가 큐에 저장되었습니다.")
+                # 데이터를 파싱하여 큐에 저장
+                parsed_values = parse_eog_data(raw_data_hex)
+                if parsed_values:
+                    eog_data_queue.extend(parsed_values)
+                    logger.info(f"{len(parsed_values)}개의 파싱된 데이터가 큐에 저장되었습니다.")
+                    await websocket.send_text(f"Successfully parsed {len(parsed_values)} EOG values.")
 
-                # 클라이언트에 수신 확인 메시지 전송
-                await websocket.send_text("EOG data received successfully.")
+                # 큐가 가득 찼을 때 데이터 전송
+                if len(eog_data_queue) == eog_data_queue.maxlen:
+                    logger.info("WebSocket 연결 종료: 큐가 최대 용량에 도달했습니다.")
+                    # WebSocket 연결 종료
+                    await websocket.close(code=1000, reason="Queue reached maximum capacity")
+                    await send_data_to_backend(username, "eog", eog_data_queue)
+                    return
+                else:
+                    logger.warning("파싱된 데이터가 없습니다.")
+                    await websocket.send_text("No valid EOG data parsed.")
+
             except WebSocketDisconnect:
                 logger.info("WebSocket 연결 해제됨.")
                 break
             except Exception as e:
                 logger.error(f"데이터 처리 중 오류 발생: {e}")
                 await websocket.send_text("Internal server error.")
-    except WebSocketDisconnect:
-        logger.info("WebSocket 연결 해제됨.")
     except Exception as e:
         logger.error(f"WebSocket 처리 중 오류 발생: {e}")
+
 
 # EOG 데이터를 조회하기 위한 HTTP GET 엔드포인트
 @eog_router.get("/eog")
