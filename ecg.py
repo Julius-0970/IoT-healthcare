@@ -67,6 +67,7 @@ async def websocket_ecg(websocket: WebSocket):
     async with lock:  # 동시성 보호
         # user 정보 읽어오기
         user = current_username
+        logger.info(f"current_username: {current_username}")
 
     try:
         while True:
