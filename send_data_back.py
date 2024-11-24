@@ -5,7 +5,6 @@ from user_state import current_username, lock  # 상태 변수와 Lock 가져오
 
 logger = get_logger("data_sender")
 
-
 # 서버 URL 매핑 테이블
 SENSOR_URL_MAPPING = {
     "ecg": "https://reptile-promoted-publicly.ngrok-free.app/ws/ecg",
@@ -15,33 +14,19 @@ SENSOR_URL_MAPPING = {
     "temp": "https://example.com/api/temp",
 }
 
-def validate_json(payload):
-    """
-    JSON 형식을 확인하는 함수.
-    :param payload: 검증할 JSON 데이터
-    :return: JSON 형식이 올바르면 True, 그렇지 않으면 False
-    """
-    try:
-        json_str = json.dumps(payload)  # JSON 직렬화 시도
-        logger.debug(f"전송할 JSON 데이터: {json_str}")
-        return True
-    except (TypeError, ValueError) as e:
-        logger.error(f"JSON 검증 실패: {e}")
-        return False
-
 async def send_data_to_backend(sensor_type, data_queue):
     """
     센서 데이터를 백엔드로 전송하는 함수.
     
+    :param username: 사용자 이름
     :param sensor_type: 센서 종류 (예: 'ecg', 'gsr', 'spo2' 등)
     :param data_queue: 전송할 데이터 큐
     """
-    # current_username 가져오기
-    with lock:  # Lock을 사용하여 스레드 안전하게 접근
-        username = current_username
-        if not username:
-            logger.warning("사용자 이름이 설정되지 않았습니다.")
-            return
+    if not username:
+        logger.warning("사용자 이름이 설정되지 않았습니다.")
+        return
+        username = "test"
+        #return
 
     if not data_queue:
         logger.warning(f"{sensor_type} 데이터 큐가 비어 있습니다.")
@@ -58,11 +43,8 @@ async def send_data_to_backend(sensor_type, data_queue):
         "username": username,
         f"{sensor_type}_data": list(data_queue)
     }
-
-    # JSON 형식 검증
-    if not validate_json(payload):
-        logger.error(f"올바르지 않은 JSON 데이터: {payload}")
-        return
+    # Payload 생성 로그
+    logger.debug(f"Payload 생성됨: {json.dumps(payload, indent=2)}")
 
     try:
         async with httpx.AsyncClient() as client:
