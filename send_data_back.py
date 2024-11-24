@@ -22,11 +22,14 @@ async def send_data_to_backend(sensor_type, data_queue):
     :param sensor_type: 센서 종류 (예: 'ecg', 'gsr', 'spo2' 등)
     :param data_queue: 전송할 데이터 큐
     """
+    # current_username 가져오기
+    with lock:  # Lock을 사용하여 스레드 안전하게 접근
+        username = current_username  # username을 lock 블록 안에서 가져옵니다.
+        
     if not username:
         logger.warning("사용자 이름이 설정되지 않았습니다.")
         return
-        username = "test"
-        #return
+        # username = "test" #return
 
     if not data_queue:
         logger.warning(f"{sensor_type} 데이터 큐가 비어 있습니다.")
