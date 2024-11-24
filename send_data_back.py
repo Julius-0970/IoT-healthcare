@@ -1,7 +1,6 @@
 import httpx
 import json  # JSON 확인을 위한 모듈 추가
 from logger import get_logger  # 별도의 로깅 설정 가져오기
-from user_state import current_username, lock  # 상태 변수와 Lock 가져오기
 
 logger = get_logger("data_sender")
 
@@ -14,7 +13,7 @@ SENSOR_URL_MAPPING = {
     "temp": "https://example.com/api/temp",
 }
 
-async def send_data_to_backend(sensor_type, data_queue):
+async def send_data_to_backend(username, sensor_type, data_queue):
     """
     센서 데이터를 백엔드로 전송하는 함수.
     
@@ -22,10 +21,6 @@ async def send_data_to_backend(sensor_type, data_queue):
     :param sensor_type: 센서 종류 (예: 'ecg', 'gsr', 'spo2' 등)
     :param data_queue: 전송할 데이터 큐
     """
-    # current_username 가져오기
-    with lock:  # Lock을 사용하여 스레드 안전하게 접근
-        username = current_username  # username을 lock 블록 안에서 가져옵니다.
-        
     if not username:
         logger.warning("사용자 이름이 설정되지 않았습니다.")
         return
