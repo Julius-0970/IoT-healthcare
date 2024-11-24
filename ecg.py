@@ -67,7 +67,6 @@ async def websocket_ecg(websocket: WebSocket):
     async with lock:  # 동시성 보호
         # user 정보 읽어오기
         user = current_username
-        logger.info(f"current_username: {current_username}")
 
     try:
         while True:
@@ -96,8 +95,8 @@ async def websocket_ecg(websocket: WebSocket):
                 
                 # 연결이 끊겼을 때 큐에 남은 데이터를 처리
                 if ecg_data_queue:
-                    async with lock:  # 동시성 보호
-                        user = current_username
+                    logger.info(f"current_username: {current_username}")
+                    logger.info(f"user: {user}")
                     logger.info(f"끊긴 후 남은 데이터 {len(ecg_data_queue)}개 전송 시도")
                     await send_data_to_backend(user, "ecg", ecg_data_queue)
                 break
