@@ -1,17 +1,9 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from collections import deque  # deque를 사용하기 위한 import
-import logging  # 로깅 기능을 사용하기 위한 import
+from logger import get_logger  # 별도의 로깅 설정 가져오기
 
 # FastAPI 애플리케이션과 연결하는 router 명 지정
 gsr_router = APIRouter()
-
-# 로깅 설정
-logger = logging.getLogger("gsr_logger")
-logger.setLevel(logging.DEBUG)
-handler = logging.StreamHandler()
-formatter = logging.Formatter("[%(asctime)s] %(levelname)s - %(message)s")
-handler.setFormatter(formatter)
-logger.addHandler(handler)
 
 # GSR 데이터를 실시간으로 송수신하기 위한 큐(데크) 생성
 gsr_data_queue = deque(maxlen=15000)  # 최대 15000개의 파싱된 데이터만 저장
