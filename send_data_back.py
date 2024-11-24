@@ -22,7 +22,8 @@ async def send_data_to_backend(username, sensor_type, data_queue):
     """
     if not username:
         logger.warning("사용자 이름이 설정되지 않았습니다.")
-        return
+        username = "test"
+        #return
 
     if not data_queue:
         logger.warning(f"{sensor_type} 데이터 큐가 비어 있습니다.")
