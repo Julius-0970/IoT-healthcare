@@ -1,4 +1,5 @@
 import httpx
+import json  # JSON 확인을 위한 모듈 추가
 from logger import get_logger  # 별도의 로깅 설정 가져오기
 from user_state import current_username, lock  # 상태 변수와 Lock 가져오기
 
@@ -6,18 +7,31 @@ logger = get_logger("data_sender")
 
 # 서버 URL 매핑 테이블
 SENSOR_URL_MAPPING = {
-    "ecg": "https://reptile-promoted-publicly.ngrok-free.app/ws/ecg",
+    "ecg": "https://example.com/api/ecg",
     "gsr": "https://example.com/api/gsr",
     "spo2": "https://example.com/api/spo2",
     "airflow": "https://example.com/api/airflow",
     "temp": "https://example.com/api/temp",
 }
 
-async def send_data_to_backend(username, sensor_type, data_queue):
+def validate_json(payload):
+    """
+    JSON 형식을 확인하는 함수.
+    :param payload: 검증할 JSON 데이터
+    :return: JSON 형식이 올바르면 True, 그렇지 않으면 False
+    """
+    try:
+        json_str = json.dumps(payload)  # JSON 직렬화 시도
+        logger.debug(f"전송할 JSON 데이터: {json_str}")
+        return True
+    except (TypeError, ValueError) as e:
+        logger.error(f"JSON 검증 실패: {e}")
+        return False
+
+async def send_data_to_backend(sensor_type, data_queue):
     """
     센서 데이터를 백엔드로 전송하는 함수.
     
-    :param username: 사용자 이름
     :param sensor_type: 센서 종류 (예: 'ecg', 'gsr', 'spo2' 등)
     :param data_queue: 전송할 데이터 큐
     """
@@ -43,6 +57,11 @@ async def send_data_to_backend(username, sensor_type, data_queue):
         "username": username,
         f"{sensor_type}_data": list(data_queue)
     }
+
+    # JSON 형식 검증
+    if not validate_json(payload):
+        logger.error(f"올바르지 않은 JSON 데이터: {payload}")
+        return
 
     try:
         async with httpx.AsyncClient() as client:
