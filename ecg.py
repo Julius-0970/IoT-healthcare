@@ -2,7 +2,6 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from collections import deque
 from logger import get_logger  # 별도의 로깅 설정 가져오기
 from send_data_back import send_data_to_backend  # 서버 전송 함수 가져오기
-from user_state import current_username, lock  # 상태 변수와 Lock 가져오기
 import asyncio
 
 # 로거 생성
