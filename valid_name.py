@@ -1,5 +1,5 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-import logging
+from logger import get_logger  # 별도의 로깅 설정 가져오기
 # import asyncio
 from user_state import current_username, lock  # 상태 변수와 Lock 가져오기
 
