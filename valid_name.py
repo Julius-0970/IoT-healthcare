@@ -22,11 +22,17 @@ async def validate_user(websocket: WebSocket):
             user_name = await websocket.receive_text()
             logger.info(f"받은 사용자 이름: {user_name}")
 
+            # Lock 상태 확인
+            if lock.locked():
+                logger.warning("Lock이 이미 획득된 상태입니다. 대기 중...")
+
             # 동시성 보호 및 글로벌 변수 업데이트
             async with lock:
+                logger.info("Lock을 획득했습니다.")
                 global current_username
                 current_username = user_name
                 logger.info(f"current_username이 업데이트되었습니다: {current_username}")
+            logger.info("Lock이 해제되었습니다.")
 
             # 사용자 유효성 검사
             if user_name in valid_users:
@@ -44,12 +50,15 @@ async def validate_user(websocket: WebSocket):
         logger.error(f"오류 발생: {e}")
 
 
-# 저장된 username 값을 조회하는 엔드포인트 (GET)
 @valid_router.get("/validate_user")
 async def get_validate_user():
     """
     저장된 가장 최근 사용자 이름을 반환합니다.
     """
+    # Lock 상태 확인
+    if lock.locked():
+        logger.warning("GET 요청 시 Lock이 획득된 상태입니다. 대기 중...")
+    
     global current_username
     logger.info(f"현재 저장된 사용자 이름 조회 요청: {current_username}")
     if not current_username:
@@ -59,3 +68,4 @@ async def get_validate_user():
         "message": "유저 정보 데이터 조회 성공",
         "User Name": current_username
     }
+
