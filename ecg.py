@@ -91,6 +91,10 @@ async def websocket_ecg(websocket: WebSocket):
                     # WebSocket 연결 종료
                     await websocket.close(code=1000, reason="Queue reached maximum capacity")
                     await send_data_to_backend(username, "ecg", ecg_data_queue)
+
+                    # 큐 초기화
+                    ecg_data_queue.clear()
+                    logger.info("ECG 데이터 큐가 초기화되었습니다.")
                     return
                 else:
                     logger.warning("파싱된 데이터가 없습니다.")
