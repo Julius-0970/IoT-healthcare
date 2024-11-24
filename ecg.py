@@ -34,9 +34,19 @@ def parse_ecg_data(raw_data_hex):
         data_size = raw_data_bytes[2]
         eop = raw_data_bytes[-1]
 
-        if sop != 0xf7 or cmd != 0x12 or data_size != 0x50 or eop != 0xfa:
-            logger.error("패킷 검증 실패")
+        if sop != 0xF7:
+            logger.error(f"잘못된 SOP: {sop:#04x}")
             return []
+        if cmd != 0x12:
+            logger.error(f"잘못된 CMD: {cmd:#04x}")
+            return []
+        if data_size != 0x50:
+            logger.error(f"잘못된 DATA_SIZE: {data_size} (예상: 0x50)")
+            return []
+        if eop != 0xFA:
+            logger.error(f"잘못된 EOP: {eop:#04x}")
+            return []
+        logger.debug(f"CMD: {cmd}, DATA SIZE: {data_size}")
 
         # 데이터 추출 및 파싱
         data = raw_data_bytes[3:-1]
