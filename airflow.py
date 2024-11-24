@@ -15,7 +15,7 @@ airflow_data_queue = deque(maxlen=15000)  # 최대 416개의 최신 데이터만
 # Airflow 데이터를 파싱하는 함수
 def parse_airflow_data(raw_data_hex):
     """
-    수신된 원시 ECG 데이터(hex 문자열)를 파싱하여 실제 값 리스트로 변환합니다.
+    수신된 원시 AIRFLOW 데이터(hex 문자열)를 파싱하여 실제 값 리스트로 변환합니다.
     패킷 구조:
     - SOP (1바이트): f7
     - CMD (1바이트): 62
@@ -98,6 +98,10 @@ async def websocket_airflow(websocket: WebSocket):
     logger.info("WebSocket 연결 수락됨.")
 
     try:
+        # 클라이언트로부터 username 수신
+        username = await websocket.receive_text()
+        logger.info(f"수신된 사용자 이름: {username}")
+        
         while True:
             # 바이너리 데이터 수신
             try:
@@ -111,6 +115,18 @@ async def websocket_airflow(websocket: WebSocket):
                     airflow_data_queue.extend(parsed_values)
                     logger.info(f"{len(parsed_values)}개의 파싱된 데이터가 큐에 저장되었습니다.")
                     await websocket.send_text(f"Successfully parsed {len(parsed_values)} Airflow values.")
+                    
+                 # 큐가 가득 찼을 때 데이터 전송
+                if len(airflow_data_queue) == airflow_data_queue.maxlen:
+                    logger.info("WebSocket 연결 종료: 큐가 최대 용량에 도달했습니다.")
+                    # WebSocket 연결 종료
+                    await websocket.close(code=1000, reason="Queue reached maximum capacity")
+                    await send_data_to_backend(username, "airflow", airflow_data_queue)
+
+                    # 큐 초기화
+                    airflow_data_queue.clear()
+                    logger.info("AIRFLOW 데이터 큐가 초기화되었습니다.")
+                    return
                 else:
                     logger.warning("파싱된 데이터가 없습니다.")
                     await websocket.send_text("No valid Airflow data parsed.")
