@@ -6,9 +6,8 @@ import httpx  # 다른 서버로 데이터를 전송하기 위한 HTTP 클라이
 from user_state import current_username  # user_state.py에서 username 가져오기
 
 
-# 로그 설정
-logger = logging.getLogger("ecg_logger")
-
+# 로거 생성
+logger = get_logger("ecg_logger")
 
 # FastAPI 애플리케이션과 연결하는 router 명 지정
 ecg_router = APIRouter()
