@@ -6,8 +6,9 @@ from logger import get_logger  # 별도의 로깅 설정 가져오기
 gsr_router = APIRouter()
 
 
-# 로그 설정
-logger = logging.getLogger("gsr_logger")
+# 로거 생성
+logger = get_logger("gsr_logger")
+
 
 # GSR 데이터를 실시간으로 송수신하기 위한 큐(데크) 생성
 gsr_data_queue = deque(maxlen=15000)  # 최대 15000개의 파싱된 데이터만 저장
