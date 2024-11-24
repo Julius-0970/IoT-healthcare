@@ -1,7 +1,7 @@
 # 모든 센서값이 들어오는 경우, 백엔드로 데이터랑 이름 전송하는 로직.
 
 import httpx
-from config.logger import get_logger
+from logger import get_logger  # 별도의 로깅 설정 가져오기
 
 logger = get_logger("data_sender")
 
