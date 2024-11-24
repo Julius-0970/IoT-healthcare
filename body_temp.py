@@ -2,9 +2,8 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException
 from collections import deque
 from logger import get_logger  # 별도의 로깅 설정 가져오기
 
-# 로그 설정
-logger = logging.getLogger("temp_logger")
-
+# 로거 생성
+logger = get_logger("temp_logger")
 
 # APIRouter 인스턴스 생성
 temp_router = APIRouter()
