@@ -5,6 +5,11 @@ from logger import get_logger  # 별도의 로깅 설정 가져오기
 # FastAPI 애플리케이션과 연결하는 router 명 지정
 emg_router = APIRouter()
 
+
+# 로그 설정
+logger = logging.getLogger("emg_logger")
+
+
 # EMG 데이터를 실시간으로 송수신하기 위한 큐(데크) 생성
 emg_data_queue = deque(maxlen=15000)  # 최대 15000개의 파싱된 데이터만 저장
 
