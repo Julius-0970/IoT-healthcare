@@ -1,11 +1,9 @@
 from fastapi import FastAPI
 import uvicorn
-import logging
 from starlette.middleware.cors import CORSMiddleware
 # from fastapi.staticfiles import StaticFiles
 
-#로그 설정 및 양식 정의
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+from logger import get_logger  # 별도의 로깅 설정 가져오기
 
 #router로 main이 각 실행파일을 가져오도록 import
 from route import router
