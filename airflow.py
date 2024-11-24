@@ -5,8 +5,9 @@ from logger import get_logger  # 별도의 로깅 설정 가져오기
 # FastAPI 애플리케이션과 연결하는 router 명 지정
 airflow_router = APIRouter()
 
-# 로그 설정
-logger = logging.getLogger("airflow_logger")
+# 로거 생성
+logger = get_logger("airflow_logger")
+
 
 # Airflow 데이터를 실시간으로 송수신하기 위한 큐(데크) 생성
 airflow_data_queue = deque(maxlen=15000)  # 최대 416개의 최신 데이터만 저장
