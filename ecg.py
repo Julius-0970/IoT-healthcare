@@ -85,7 +85,12 @@ async def websocket_ecg(websocket: WebSocket):
                     await websocket.send_text("No valid ECG data parsed.")
 
             except WebSocketDisconnect:
-                logger.info("WebSocket 연결 해제됨.")
+                logger.warning("WebSocket 연결이 끊겼습니다.")
+                
+                # 연결이 끊겼을 때 큐에 남은 데이터를 처리
+                if ecg_data_queue:
+                    logger.info(f"끊긴 후 남은 데이터 {len(ecg_data_queue)}개 전송 시도")
+                    await send_data_to_backend(current_username, "ecg", ecg_data_queue)
                 break
             except Exception as e:
                 logger.error(f"데이터 처리 중 오류 발생: {e}")
