@@ -96,6 +96,10 @@ async def websocket_emg(websocket: WebSocket):
     logger.info("WebSocket 연결 수락됨.")
 
     try:
+        # 클라이언트로부터 username 수신
+        username = await websocket.receive_text()
+        logger.info(f"수신된 사용자 이름: {username}")
+        
         while True:
             # 바이너리 데이터 수신
             try:
@@ -109,6 +113,15 @@ async def websocket_emg(websocket: WebSocket):
                     emg_data_queue.extend(parsed_values)
                     logger.info(f"{len(parsed_values)}개의 파싱된 데이터가 큐에 저장되었습니다.")
                     await websocket.send_text(f"Successfully parsed {len(parsed_values)} EMG values.")
+                    
+                # 큐가 가득 찼을 때 데이터 전송
+                if len(emg_data_queue) == emg_data_queue.maxlen:
+                    logger.info("WebSocket 연결 종료: 큐가 최대 용량에 도달했습니다.")
+                    # WebSocket 연결 종료
+                    await websocket.close(code=1000, reason="Queue reached maximum capacity")
+                    await send_data_to_backend(username, "emg", emg_data_queue)
+                    return
+                    
                 else:
                     logger.warning("파싱된 데이터가 없습니다.")
                     await websocket.send_text("No valid EMG data parsed.")
