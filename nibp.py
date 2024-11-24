@@ -1,8 +1,8 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from logger import get_logger  # 별도의 로깅 설정 가져오기
 
-# 로그 설정
-logger = logging.getLogger("nibp_logger")
+# 로거 생성
+logger = get_logger("nibp_logger")
 
 # APIRouter 생성
 nibp_router = APIRouter()
