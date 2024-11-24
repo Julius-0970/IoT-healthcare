@@ -4,13 +4,13 @@ from logger import get_logger  # 별도의 로깅 설정 가져오기
 
 logger = get_logger("data_sender")
 
-# 서버 URL 매핑 테이블
+# 서버 URL 매핑 테이블(파형데이터만 일단 넣음)_정형 데이터의 경우에는 리스트 처리를 안하기 때문에 예외처리 필요
 SENSOR_URL_MAPPING = {
     "ecg": "https://reptile-promoted-publicly.ngrok-free.app/ws/ecg",
-    "gsr": "https://example.com/api/gsr",
-    "spo2": "https://example.com/api/spo2",
-    "airflow": "https://example.com/api/airflow",
-    "temp": "https://example.com/api/temp",
+    "eog": "https://reptile-promoted-publicly.ngrok-free.app/ws/eog",
+    "emg": "https://reptile-promoted-publicly.ngrok-free.app/ws/emg",
+    "gsr": "https://reptile-promoted-publicly.ngrok-free.app/ws/gsr",
+    "airflow": "https://reptile-promoted-publicly.ngrok-free.app/airflow",
 }
 
 async def send_data_to_backend(username, sensor_type, data_queue):
