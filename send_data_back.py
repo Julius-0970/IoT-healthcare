@@ -42,7 +42,7 @@ async def send_data_to_backend(username, sensor_type, data_queue):
         f"{sensor_type}data": list(data_queue)
     }
     # Payload 생성 로그
-    logger.debug(f"Payload 생성됨: {json.dumps(payload, indent=2)}")
+    #logger.debug(f"Payload 생성됨: {json.dumps(payload, indent=2)}")
 
     try:
         async with httpx.AsyncClient() as client:
