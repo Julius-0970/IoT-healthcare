@@ -68,7 +68,7 @@ async def temp_websocket_handler(websocket: WebSocket):
                 logger.debug(f"수신된 데이터: {raw_data_hex}")
 
                 # 데이터 파싱
-                temperature = parse_temp_data(data)
+                temperature = parse_temp_data(raw_data_hex)
                 temperature_data_queue.append(temperature)
                 logger.info(f"큐에 데이터 저장됨: {temperature}")
                 await websocket.send_text("Temperature data received successfully.")
