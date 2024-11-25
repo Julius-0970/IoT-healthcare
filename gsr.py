@@ -96,6 +96,10 @@ async def websocket_gsr(websocket: WebSocket):
     """
     await websocket.accept()
     logger.info("WebSocket 연결 수락됨.")
+    # 큐 초기화
+    gsr_data_queue.clear()
+    logger.info("GSR 데이터 큐가 초기화되었습니다.")
+
 
     try:
         while True:
