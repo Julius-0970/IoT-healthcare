@@ -11,7 +11,7 @@ SENSOR_URL_MAPPING = {
     "emg": "https://reptile-promoted-publicly.ngrok-free.app/ws/emg",
     "gsr": "https://reptile-promoted-publicly.ngrok-free.app/ws/gsr",
     "airflow": "https://reptile-promoted-publicly.ngrok-free.app/ws/airflow",
-    "temp": "https://reptile-promoted-publicly.ngrok-free.app/ws/temp"
+    "temp": "https://reptile-promoted-publicly.ngrok-free.app/ws/bodytemp"
 }
 
 async def send_data_to_backend(username, sensor_type, data):
