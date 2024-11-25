@@ -66,6 +66,10 @@ async def websocket_spo2(websocket: WebSocket):
     logger.info("SPO2 데이터 큐가 초기화되었습니다.")
 
     try:
+        # 클라이언트로부터 device_id 수신
+        device_id = await websocket.receive_text()
+        logger.info(f"수신된 장비 mac 정보: {device_id}")
+        
         # 클라이언트로부터 username 수신
         username = await websocket.receive_text()
         logger.info(f"수신된 사용자 이름: {username}")
@@ -91,7 +95,7 @@ async def websocket_spo2(websocket: WebSocket):
                     if len(temperature_data_queue) == temperature_data_queue.maxlen:
                         logger.info("큐가 최대 용량에 도달했습니다. 데이터를 서버로 전송합니다.")
                         # 데이터 전송
-                        await send_data_to_backend(username, "temp", temperature_data_queue[-1])
+                        await send_data_to_backend(device_id, username, "temp", temperature_data_queue[-1])
                         
                         # 전송 성공 시 큐 초기화
                         spo2_data_queue.clear()
