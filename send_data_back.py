@@ -14,21 +14,22 @@ SENSOR_URL_MAPPING = {
     "temp": "https://reptile-promoted-publicly.ngrok-free.app/ws/temp"
 }
 
-async def send_data_to_backend(username, sensor_type, data_queue):
+async def send_data_to_backend(username, sensor_type, data):
     """
     센서 데이터를 백엔드로 전송하는 함수.
     
     :param username: 사용자 이름
     :param sensor_type: 센서 종류 (예: 'ecg', 'gsr', 'spo2' 등)
-    :param data_queue: 전송할 데이터 큐
+    :param data: 전송할 데이터 단일 데이터 혹은 큐(리스트)
     """
     if not username:
         logger.warning("사용자 이름이 설정되지 않았습니다.")
         return
         # username = "test" #return
 
-    if not data_queue:
-        logger.warning(f"{sensor_type} 데이터 큐가 비어 있습니다.")
+    # 데이터가 리스트인 경우와 단일 데이터인 경우에 데이터가 비어있는지 확인.
+    if data is None or (isinstance(data, list) and not data):
+        logger.warning(f"{sensor_type} 데이터가 비어 있습니다.")
         return
 
     # 센서 종류에 따른 서버 URL 선택
@@ -36,12 +37,30 @@ async def send_data_to_backend(username, sensor_type, data_queue):
     if not backend_url:
         logger.error(f"센서 종류 '{sensor_type}'에 해당하는 URL이 없습니다.")
         return
-
-    # Payload 생성
-    payload = {
-        "userId": username,
-        f"{sensor_type}data": list(data_queue)
-    }
+        
+    # 단일 값인지, 리스트인지 확인
+    if isinstance(data, list):
+        payload_data = list(data)  # 리스트인 경우 복사
+        if sensor_type == "nibp":
+            # Payload 생성
+            payload = {
+                "userId": username,
+                "systolic": payload_data[0],
+                "diastolic": payload_data[-1]
+            }
+        else:
+            # Payload 생성
+            payload = {
+                "userId": username,
+                f"{sensor_type}data": payload_data
+            }
+    else:
+        payload_data = data  # 단일 값인 경우 들어온 값 그대로 전송
+        # Payload 생성
+        payload = {
+            "userId": username,
+            f"{sensor_type}data": payload_data
+        }
     # Payload 생성 로그
     # userId만 로그에 출력
     logger.debug(f"userId: {payload['userId']}")
