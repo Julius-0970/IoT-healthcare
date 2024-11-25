@@ -57,6 +57,9 @@ async def websocket_nibp(websocket: WebSocket):
     """
     await websocket.accept()
     logger.info("WebSocket 연결 수락됨.")
+    # 큐 초기화
+    nibp_data_queue.clear()
+    logger.info("NIBP 데이터 큐가 초기화되었습니다.")
 
     try:
         # 클라이언트로부터 사용자 이름 수신
