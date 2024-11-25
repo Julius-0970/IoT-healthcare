@@ -77,7 +77,7 @@ async def send_data_to_backend(device_id, username, sensor_type, data):
             if response.status_code == 200:
                 logger.info(f"{sensor_type} 데이터 전송 성공")
                 logger.info(f"서버 응답 메시지: {response.text}")
-                data_queue.clear()
+                payload_data.clear()
             else:
                 logger.error(f"{sensor_type} 데이터 전송 실패: {response.status_code} - {response.text}")
                 # 만약 userId가 없어서 반환된것이라면, 클라이언트에 메세지를 반환해야함.(이 코드는 반환 메세지를 자세히 봐야할 거 같아.
