@@ -60,6 +60,10 @@ async def temp_websocket_handler(websocket: WebSocket):
     logger.info("TEMP 데이터 큐가 초기화되었습니다.")
 
     try:
+        # 클라이언트로부터 device_id 수신
+        device_id = await websocket.receive_text()
+        logger.info(f"수신된 장비 mac 정보: {device_id}")
+        
         # 클라이언트로부터 username 수신
         username = await websocket.receive_text()
         logger.info(f"수신된 사용자 이름: {username}")
@@ -82,7 +86,7 @@ async def temp_websocket_handler(websocket: WebSocket):
                     # 클라이언트와의 연결 종료
                     await websocket.close(code=1000, reason="Queue reached maximum capacity")
                     # 데이터 전송
-                    await send_data_to_backend(username, "temp", temperature_data_queue[-1])
+                    await send_data_to_backend(device_id, username, "temp", temperature_data_queue[-1])
                     
                     # 전송 성공 시 큐 초기화
                     temperature_data_queue.clear()
