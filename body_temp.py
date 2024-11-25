@@ -10,7 +10,7 @@ logger = get_logger("temp_logger")
 temp_router = APIRouter()
 
 # 큐를 사용하여 body_temp 데이터를 저장
-temperature_data_queue = deque(maxlen=100)  # 최대 크기 설정
+temperature_data_queue = deque(maxlen=70)  # 최대 크기 설정
 
 
 def parse_temp_data(raw_data_hex):
