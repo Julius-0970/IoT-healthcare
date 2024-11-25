@@ -12,12 +12,14 @@ SENSOR_URL_MAPPING = {
     "gsr": "https://reptile-promoted-publicly.ngrok-free.app/ws/gsr",
     "airflow": "https://reptile-promoted-publicly.ngrok-free.app/ws/airflow",
     "temp": "https://reptile-promoted-publicly.ngrok-free.app/ws/bodytemp"
+    "nibp": "https://reptile-promoted-publicly.ngrok-free.app/ws/nibp"
+    "spo2": "https://reptile-promoted-publicly.ngrok-free.app/ws/spo2"
 }
 
-async def send_data_to_backend(username, sensor_type, data):
+async def send_data_to_backend(device_id, username, sensor_type, data):
     """
     센서 데이터를 백엔드로 전송하는 함수.
-    
+    :device_id: 장비 고유 정보(식별자)
     :param username: 사용자 이름
     :param sensor_type: 센서 종류 (예: 'ecg', 'gsr', 'spo2' 등)
     :param data: 전송할 데이터 단일 데이터 혹은 큐(리스트)
@@ -44,6 +46,7 @@ async def send_data_to_backend(username, sensor_type, data):
         if sensor_type == "nibp":
             # Payload 생성
             payload = {
+                "device_id": device_id,
                 "userId": username,
                 "systolic": payload_data[0],
                 "diastolic": payload_data[-1]
@@ -51,6 +54,7 @@ async def send_data_to_backend(username, sensor_type, data):
         else:
             # Payload 생성
             payload = {
+                "device_id": device_id,
                 "userId": username,
                 f"{sensor_type}data": payload_data
             }
@@ -58,12 +62,13 @@ async def send_data_to_backend(username, sensor_type, data):
         payload_data = data  # 단일 값인 경우 들어온 값 그대로 전송
         # Payload 생성
         payload = {
+            "device_id": device_id,
             "userId": username,
             f"{sensor_type}data": payload_data
         }
     # Payload 생성 로그
     # userId만 로그에 출력
-    logger.debug(f"userId: {payload['userId']}")
+    logger.debug(f"device_id: {payload['device_id']}, userId: {payload['userId']}")
     #logger.debug(f"Payload 생성됨: {json.dumps(payload, indent=2)}")
 
     try:
