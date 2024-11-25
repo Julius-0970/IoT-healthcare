@@ -75,12 +75,14 @@ async def websocket_ecg(websocket: WebSocket):
     """
     await websocket.accept()
     logger.info("WebSocket 연결 수락됨.")
+    # 큐 초기화
+    ecg_data_queue.clear()
+    logger.info("ECG 데이터 큐가 초기화되었습니다.")
 
     try:
         # 클라이언트로부터 username 수신
         username = await websocket.receive_text()
         logger.info(f"수신된 사용자 이름: {username}")
-        
         while True:
             try:
                 data = await websocket.receive_bytes()
