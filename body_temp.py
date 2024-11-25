@@ -79,6 +79,7 @@ async def temp_websocket_handler(websocket: WebSocket):
                 temperature_data_queue.append(temperature)
                 logger.info(f"큐에 데이터 저장됨: {temperature}")
                 await websocket.send_text("Temperature data received successfully.")
+                last_temp = temperature_data_queue[-1]
 
                 # 큐가 가득 찼을 때 데이터 전송
                 if len(temperature_data_queue) == temperature_data_queue.maxlen:
@@ -86,7 +87,7 @@ async def temp_websocket_handler(websocket: WebSocket):
                     # 클라이언트와의 연결 종료
                     await websocket.close(code=1000, reason="Queue reached maximum capacity")
                     # 데이터 전송
-                    await send_data_to_backend(device_id, username, "temp", temperature_data_queue[-1])
+                    await send_data_to_backend(device_id, username, "temp", last_temp)
                     
                     # 전송 성공 시 큐 초기화
                     temperature_data_queue.clear()
