@@ -27,7 +27,6 @@ async def send_data_to_backend(device_id, username, sensor_type, data):
     if not username:
         logger.warning("사용자 이름이 설정되지 않았습니다.")
         return
-        # username = "test" #return
 
     # 데이터가 리스트인 경우와 단일 데이터인 경우에 데이터가 비어있는지 확인.
     if data is None or (isinstance(data, list) and not data):
@@ -39,7 +38,9 @@ async def send_data_to_backend(device_id, username, sensor_type, data):
     if not backend_url:
         logger.error(f"센서 종류 '{sensor_type}'에 해당하는 URL이 없습니다.")
         return
-        
+
+    logger.debug(f"선택된 서버 URL: {backend_url}")
+
     # 단일 값인지, 리스트인지 확인
     if isinstance(data, list):
         payload_data = list(data)  # 리스트인 경우 복사
@@ -66,10 +67,9 @@ async def send_data_to_backend(device_id, username, sensor_type, data):
             "userId": username,
             f"{sensor_type}data": payload_data
         }
+
     # Payload 생성 로그
-    # userId만 로그에 출력
-    logger.debug(f"device_id: {payload['device_id']}, userId: {payload['userId']}")
-    #logger.debug(f"Payload 생성됨: {json.dumps(payload, indent=2)}")
+    logger.debug(f"device_id: {payload['device_id']}, userId: {payload['userId']}, Payload: {payload}")
 
     try:
         async with httpx.AsyncClient() as client:
@@ -77,9 +77,13 @@ async def send_data_to_backend(device_id, username, sensor_type, data):
             if response.status_code == 200:
                 logger.info(f"{sensor_type} 데이터 전송 성공")
                 logger.info(f"서버 응답 메시지: {response.text}")
-                payload_data.clear()
+                # 리스트인 경우만 clear 호출
+                if isinstance(payload_data, list):
+                    payload_data.clear()
+                else:
+                    logger.info(f"단일 값({payload_data})이므로 clear() 생략.")
             else:
-                logger.error(f"{sensor_type} 데이터 전송 실패: {response.status_code} - {response.text}")
-                # 만약 userId가 없어서 반환된것이라면, 클라이언트에 메세지를 반환해야함.(이 코드는 반환 메세지를 자세히 봐야할 거 같아.
+                logger.error(f"{sensor_type} 데이터 전송 실패: {response.status_code}, 응답: {response.text}")
     except Exception as e:
         logger.error(f"{sensor_type} 데이터 전송 중 오류 발생: {e}")
+
