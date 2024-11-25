@@ -99,6 +99,10 @@ async def websocket_emg(websocket: WebSocket):
     logger.info("EMG 데이터 큐가 초기화되었습니다.")
 
     try:
+        # 클라이언트로부터 device_id 수신
+        device_id = await websocket.receive_text()
+        logger.info(f"수신된 장비 mac 정보: {device_id}")
+        
         # 클라이언트로부터 username 수신
         username = await websocket.receive_text()
         logger.info(f"수신된 사용자 이름: {username}")
@@ -122,7 +126,7 @@ async def websocket_emg(websocket: WebSocket):
                     logger.info("WebSocket 연결 종료: 큐가 최대 용량에 도달했습니다.")
                     # WebSocket 연결 종료
                     await websocket.close(code=1000, reason="Queue reached maximum capacity")
-                    await send_data_to_backend(username, "emg", list(emg_data_queue))
+                    await send_data_to_backend(device_id, username, "emg", list(emg_data_queue))
 
                     # 큐 초기화
                     emg_data_queue.clear()
