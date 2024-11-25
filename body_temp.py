@@ -84,10 +84,10 @@ async def temp_websocket_handler(websocket: WebSocket):
                 # 큐가 가득 찼을 때 데이터 전송
                 if len(temperature_data_queue) == temperature_data_queue.maxlen:
                     logger.info("큐가 최대 용량에 도달했습니다. 데이터를 서버로 전송합니다.")
-                    # 클라이언트와의 연결 종료
-                    await websocket.close(code=1000, reason="Queue reached maximum capacity")
                     # 데이터 전송
                     await send_data_to_backend(device_id, username, "temp", last_temp)
+                    # 클라이언트와의 연결 종료
+                    await websocket.close(code=1000, reason="Queue reached maximum capacity")
                     
                     # 전송 성공 시 큐 초기화
                     temperature_data_queue.clear()
