@@ -11,7 +11,7 @@ logger = get_logger("spo2_logger")
 
 
 # spO2 데이터를 실시간으로 송수신하기 위한 큐(데크) 생성
-spo2_data_queue = deque(maxlen=10)  # 최대 100개의 최신 데이터만 저장
+spo2_data_queue = deque(maxlen=10)  # 최대 10개의 최신 데이터만 저장
 
 
 def parse_spo2_packet(raw_data_hex):
