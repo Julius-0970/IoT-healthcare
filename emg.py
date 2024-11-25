@@ -119,7 +119,7 @@ async def websocket_emg(websocket: WebSocket):
                     logger.info("WebSocket 연결 종료: 큐가 최대 용량에 도달했습니다.")
                     # WebSocket 연결 종료
                     await websocket.close(code=1000, reason="Queue reached maximum capacity")
-                    await send_data_to_backend(username, "emg", emg_data_queue)
+                    await send_data_to_backend(username, "emg", list(emg_data_queue))
 
                     # 큐 초기화
                     emg_data_queue.clear()
