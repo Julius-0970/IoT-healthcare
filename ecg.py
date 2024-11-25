@@ -80,7 +80,9 @@ async def websocket_ecg(websocket: WebSocket):
     logger.info("ECG 데이터 큐가 초기화되었습니다.")
 
     try:
-        
+        # 클라이언트로부터 device_id 수신
+        device_id = await websocket.receive_text()
+        logger.info(f"수신된 장비 mac 정보: {device_id}")
         
         # 클라이언트로부터 username 수신
         username = await websocket.receive_text()
