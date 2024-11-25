@@ -11,8 +11,8 @@ SENSOR_URL_MAPPING = {
     "emg": "https://reptile-promoted-publicly.ngrok-free.app/ws/emg",
     "gsr": "https://reptile-promoted-publicly.ngrok-free.app/ws/gsr",
     "airflow": "https://reptile-promoted-publicly.ngrok-free.app/ws/airflow",
-    "temp": "https://reptile-promoted-publicly.ngrok-free.app/ws/bodytemp"
-    "nibp": "https://reptile-promoted-publicly.ngrok-free.app/ws/nibp"
+    "temp": "https://reptile-promoted-publicly.ngrok-free.app/ws/bodytemp",
+    "nibp": "https://reptile-promoted-publicly.ngrok-free.app/ws/nibp",
     "spo2": "https://reptile-promoted-publicly.ngrok-free.app/ws/spo2"
 }
 
