@@ -1,4 +1,5 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from collections import deque  # deque를 사용하기 위한 import
 from logger import get_logger  # 별도의 로깅 설정 가져오기
 
 # 로거 생성
@@ -7,66 +8,93 @@ logger = get_logger("nibp_logger")
 # APIRouter 생성
 nibp_router = APIRouter()
 
-# NIBP 데이터 초기화
-nibp_data = {
-    "systolic": None,   # 수축기 혈압
-    "diastolic": None,  # 이완기 혈압
-    "pulse": None         # 심박수
-}
+nibp_data_queue = deque(maxlen=2)  # 최대 15000개의 파싱된 데이터만 저장
 
-# 저장된 NIBP 값을 조회하는 엔드포인트 (GET)
-@nibp_router.get("/nibp")
-async def get_nibp():
+def parse_nibp_data(raw_data_hex):
     """
-    NIBP 데이터를 반환하는 HTTP GET 엔드포인트.
+    10바이트 NIBP 데이터를 파싱하는 함수.
+    :param data: 수신된 10바이트 바이너리 데이터
+    :return: 파싱된 NIBP 데이터
     """
-    if all(value is None for value in nibp_data.values()):
-        return {"message": "No NIBP 데이터 없음."}  # 데이터가 없을 경우 메시지 반환
-    return {"message": "NIBP 데이터 조회 성공", "NIBP": nibp_data}
+    raw_data_bytes = bytes.fromhex(raw_data_hex)
+    packet_length = len(raw_data_bytes)
+    
+    if packet_length != 10:
+        raise ValueError(f"잘못된 패킷 길이: {packet_length} bytes (예상: 10 bytes)")
+
+    # 패킷 헤더 및 트레일러 검증
+    sop = raw_data_bytes[0]
+    cmd = raw_data_bytes[1]
+    data_size = raw_data_bytes[2]
+    eop = raw_data_bytes[-1]
+
+    if sop != 0xF7:
+        raise ValueError(f"잘못된 SOP: {sop:#04x}")
+    if cmd != 0x52:
+        raise ValueError(f"잘못된 CMD: {cmd:#04x}")
+    if data_size != 0x04:
+        raise ValueError(f"잘못된 DATA_SIZE: {data_size} (예상: 0x04)")
+    if eop != 0xFA:
+        raise ValueError(f"잘못된 EOP: {eop:#04x}")
+
+    logger.debug(f"CMD: {cmd}, DATA SIZE: {data_size}")
+
+    diastolic = raw_data_bytes[4]  # 5번째 바이트 (diastolic)
+    systolic = raw_data_bytes[5]   # 6번째 바이트 (systolic)
+    #pulse = data[6]      # 7번째 바이트 (pulse)
+
+    return {
+        "systolic": systolic,
+        "diastolic": diastolic,
+        #"pulse": pulse
+}
 
 # WebSocket 경로 설정
 @nibp_router.websocket("/ws/nibp")
 async def websocket_nibp(websocket: WebSocket):
     """
     NIBP 데이터를 WebSocket으로 수신하고 처리하는 엔드포인트.
-
-    - 데이터는 6바이트 패킷으로 수신됩니다.
-    - 데이터 구조는 다음과 같다고 가정합니다:
-        1. 2바이트: 심박수 (BPM)
-        2. 2바이트: 수축기 혈압 (Systolic)
-        3. 2바이트: 이완기 혈압 (Diastolic)
-    - 데이터는 리틀 엔디안으로 인코딩되어 있음.
     """
-    global nibp_data
     await websocket.accept()
     logger.info("WebSocket 연결 수락됨.")
 
     try:
+        # 클라이언트로부터 사용자 이름 수신
+        username = await websocket.receive_text()
+        logger.info(f"수신된 사용자 이름: {username}")
+        
         while True:
             try:
                 # 바이너리 데이터 수신
                 data = await websocket.receive_bytes()
-                logger.debug(f"수신된 데이터: {data.hex()}")
+                raw_data_hex = data.hex()
+                logger.debug(f"수신된 데이터: {raw_data_hex}")
 
-                # 데이터 해석
-                if len(data) == 10:
-                    # 리틀 엔디안 형식으로 값 추출
-                    diastolic = data[4]  # 5번째 바이트 (diastolic)
-                    systolic = data[5]   # 6번째 바이트 (systolic)
-                    pulse = data[6]      # 7번째 바이트 (pulse)
+                # 데이터 파싱
+                parsed_values = parse_nibp_data(raw_data_hex)
+                systolic = parsed_values["systolic"]
+                diastolic = parsed_values["diastolic"]
+
+                # 데이터 리스트에 추가
+                nibp_data_queue.append(parsed_values)
+                logger.info(f"NIBP 데이터 업데이트: 수축기={systolic}, 이완기={diastolic}")
+
+                # 클라이언트에 수신 확인 메시지 전송
+                await websocket.send_text(f"NIBP data received: Systolic={systolic}, Diastolic={diastolic}")
+
+                # 큐가 2개로 가득 찼을 경우 데이터 전송
+                if len(nibp_data_queue) == nibp_data_queue.maxlen:
+                    logger.info("WebSocket 연결 종료: 큐가 최대 용량에 도달했습니다.")
+                    # WebSocket 연결 종료
+                    await websocket.close(code=1000, reason="Queue reached maximum capacity")
+                    await send_data_to_backend(username, "nibp", list(nibp_data_queue))
                     
-                    # NIBP 데이터 저장
-                    nibp_data["systolic"] = systolic
-                    nibp_data["diastolic"] = diastolic
-                    nibp_data["pulse"] = pulse
-
-                    logger.info(f"NIBP 데이터 업데이트: 수축기={systolic}, 이완기={diastolic}, Pulse/min={pulse}")
-
-                    # 클라이언트에 수신 확인 메시지 전송
-                    await websocket.send_text(f"NIBP data received: Systolic={systolic}, Diastolic={diastolic}, Pulse/min={pulse}")
-                else:
-                    logger.warning("잘못된 데이터 패킷 길이. 10바이트 필요.")
-                    await websocket.send_text("Invalid data length. Expected 10 bytes.")
+                    # 큐 초기화
+                    nibp_data_queue.clear()
+                    logger.info("NIBP 데이터 큐가 초기화되었습니다.")
+            except ValueError as e:
+                logger.warning(f"데이터 파싱 오류: {e}")
+                await websocket.send_text(str(e))
             except WebSocketDisconnect:
                 logger.info("WebSocket 연결 해제됨.")
                 break
@@ -77,3 +105,13 @@ async def websocket_nibp(websocket: WebSocket):
         logger.info("WebSocket 연결 해제됨.")
     except Exception as e:
         logger.error(f"WebSocket 처리 중 오류 발생: {e}")
+
+# 저장된 NIBP 값을 조회하는 엔드포인트 (GET)
+@nibp_router.get("/nibp")
+async def get_nibp():
+    """
+    NIBP 데이터를 반환하는 HTTP GET 엔드포인트.
+    """
+    if not nibp_data_queue:
+        return {"message": "No NIBP 데이터 없음."}  # 데이터가 없을 경우 메시지 반환
+    return {"message": "NIBP 데이터 조회 성공", "NIBP": list(nibp_data_queue)}
