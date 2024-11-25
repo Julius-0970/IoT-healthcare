@@ -95,6 +95,10 @@ async def websocket_eog(websocket: WebSocket):
     """
     await websocket.accept()
     logger.info("WebSocket 연결 수락됨.")
+    # 큐 초기화
+    eog_data_queue.clear()
+    logger.info("EOG 데이터 큐가 초기화되었습니다.")
+
 
     try:
         # 클라이언트로부터 username 수신
