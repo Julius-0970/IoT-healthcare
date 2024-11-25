@@ -61,6 +61,9 @@ async def websocket_spo2(websocket: WebSocket):
     """
     await websocket.accept()
     logger.info("WebSocket 연결 수락됨.")
+    # 전송 성공 시 큐 초기화
+    spo2_data_queue.clear()
+    logger.info("SPO2 데이터 큐가 초기화되었습니다.")
 
     try:
         # 클라이언트로부터 username 수신
