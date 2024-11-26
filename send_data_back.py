@@ -60,12 +60,12 @@ async def send_data_to_backend(device_id, username, sensor_type, data):
                 f"{sensor_type}data": payload_data
             }
     else:
-        payload_data = data  # 단일 값인 경우 들어온 값 그대로 전송
+        single_data = data  # 단일 값인 경우 들어온 값 그대로 전송
         # Payload 생성
         payload = {
             "device_id": device_id,
             "userId": username,
-            f"{sensor_type}data": payload_data
+            f"{sensor_type}data": single_data
         }
 
     # Payload 생성 로그
