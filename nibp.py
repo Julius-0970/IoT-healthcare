@@ -44,11 +44,9 @@ def parse_nibp_data(raw_data_hex):
     systolic = raw_data_bytes[5]   # 6번째 바이트 (systolic)
     #pulse = data[6]      # 7번째 바이트 (pulse)
 
-    return {
-        "systolic": systolic,
-        "diastolic": diastolic,
+    return systolic, diastolic
         #"pulse": pulse
-}
+
 
 # WebSocket 경로 설정
 @nibp_router.websocket("/ws/nibp")
@@ -93,9 +91,10 @@ async def websocket_nibp(websocket: WebSocket):
                 # 큐가 2개로 가득 찼을 경우 데이터 전송
                 if len(nibp_data_queue) == nibp_data_queue.maxlen:
                     logger.info("WebSocket 연결 종료: 큐가 최대 용량에 도달했습니다.")
+                    
+                    await send_data_to_backend(device_id, username, "nibp", list(nibp_data_queue))
                     # WebSocket 연결 종료
                     await websocket.close(code=1000, reason="Queue reached maximum capacity")
-                    await send_data_to_backend(device_id, username, "nibp", list(nibp_data_queue))
                     
                     # 큐 초기화
                     nibp_data_queue.clear()
