@@ -10,16 +10,15 @@ logger = get_logger("nibp_logger")
 nibp_router = APIRouter()
 
 nibp_data_queue = deque(maxlen=2)  # 최대 15000개의 파싱된 데이터만 저장
-
 def parse_nibp_data(raw_data_hex):
     """
     10바이트 NIBP 데이터를 파싱하는 함수.
-    :param data: 수신된 10바이트 바이너리 데이터
-    :return: 파싱된 NIBP 데이터
+    :param raw_data_hex: 수신된 10바이트 바이너리 데이터 (hex string)
+    :return: systolic, diastolic (int)
     """
     raw_data_bytes = bytes.fromhex(raw_data_hex)
     packet_length = len(raw_data_bytes)
-    
+
     if packet_length != 10:
         raise ValueError(f"잘못된 패킷 길이: {packet_length} bytes (예상: 10 bytes)")
 
@@ -40,12 +39,11 @@ def parse_nibp_data(raw_data_hex):
 
     logger.debug(f"CMD: {cmd}, DATA SIZE: {data_size}")
 
-    diastolic = raw_data_bytes[4]  # 5번째 바이트 (diastolic)
-    systolic = raw_data_bytes[5]   # 6번째 바이트 (systolic)
-    #pulse = data[6]      # 7번째 바이트 (pulse)
+    # 수축기와 이완기 값만 반환
+    diastolic = int(raw_data_bytes[4])  # 5번째 바이트 (diastolic)
+    systolic = int(raw_data_bytes[5])   # 6번째 바이트 (systolic)
 
     return systolic, diastolic
-        #"pulse": pulse
 
 
 # WebSocket 경로 설정
@@ -77,22 +75,22 @@ async def websocket_nibp(websocket: WebSocket):
                 logger.debug(f"수신된 데이터: {raw_data_hex}")
 
                 # 데이터 파싱
-                parsed_values = parse_nibp_data(raw_data_hex)
-                systolic = parsed_values["systolic"]
-                diastolic = parsed_values["diastolic"]
+                systolic, diastolic = parse_nibp_data(raw_data_hex)
 
                 # 데이터 리스트에 추가
-                nibp_data_queue.append(parsed_values)
+                nibp_data_queue.append((systolic, diastolic))
                 logger.info(f"NIBP 데이터 업데이트: 수축기={systolic}, 이완기={diastolic}")
 
                 # 클라이언트에 수신 확인 메시지 전송
                 await websocket.send_text(f"NIBP data received: Systolic={systolic}, Diastolic={diastolic}")
 
-                # 큐가 2개로 가득 찼을 경우 데이터 전송
+                # 큐가 가득 찼을 경우 데이터 전송
                 if len(nibp_data_queue) == nibp_data_queue.maxlen:
                     logger.info("WebSocket 연결 종료: 큐가 최대 용량에 도달했습니다.")
                     
+                    # 백엔드로 데이터 전송
                     await send_data_to_backend(device_id, username, "nibp", list(nibp_data_queue))
+                    
                     # WebSocket 연결 종료
                     await websocket.close(code=1000, reason="Queue reached maximum capacity")
                     
@@ -112,6 +110,7 @@ async def websocket_nibp(websocket: WebSocket):
         logger.info("WebSocket 연결 해제됨.")
     except Exception as e:
         logger.error(f"WebSocket 처리 중 오류 발생: {e}")
+
 
 # 저장된 NIBP 값을 조회하는 엔드포인트 (GET)
 @nibp_router.get("/nibp")
