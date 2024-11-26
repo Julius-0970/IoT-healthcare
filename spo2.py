@@ -48,6 +48,8 @@ def parse_spo2_packet(raw_data_hex):
 
     logger.debug(f"CMD: {cmd}, DATA SIZE: {data_size}")
 
+    spo2 = raw_data_bytes[5]
+
     # 데이터 처리 결과 반환
     return {
         #"BPM": bpm,    # 추출된 BPM 값
