@@ -9,7 +9,7 @@ logger = get_logger("nibp_logger")
 # APIRouter 생성
 nibp_router = APIRouter()
 
-nibp_data_queue = deque(maxlen=2)  # 최대 15000개의 파싱된 데이터만 저장
+nibp_data_queue = deque(maxlen=1)  # 최대 1개의 파싱된 튜플(수축기, 이완기)만 저장
 def parse_nibp_data(raw_data_hex):
     """
     10바이트 NIBP 데이터를 파싱하는 함수.
@@ -87,6 +87,9 @@ async def websocket_nibp(websocket: WebSocket):
                 # 큐가 가득 찼을 경우 데이터 전송
                 if len(nibp_data_queue) == nibp_data_queue.maxlen:
                     logger.info("WebSocket 연결 종료: 큐가 최대 용량에 도달했습니다.")
+                    # 큐의 첫 번째 값과 마지막 값을 로그로 출력
+                    logger.debug(f"큐의 첫 번째 데이터: {nibp_data_queue[0]}")
+                    logger.debug(f"큐의 마지막 데이터: {nibp_data_queue[-1]}"
                     
                     # 백엔드로 데이터 전송
                     await send_data_to_backend(device_id, username, "nibp", list(nibp_data_queue))
