@@ -50,7 +50,7 @@ async def send_data_to_backend(device_id, username, sensor_type, data):
             payload = {
                 "device_id": device_id,
                 "userId": username,
-                "systolic": nibp_values[0],
+                "systolic": nibp_values[0] + 10,
                 "diastolic": nibp_values[-1]
             }
         else:
