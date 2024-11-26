@@ -87,9 +87,6 @@ async def websocket_nibp(websocket: WebSocket):
                 # 큐가 가득 찼을 경우 데이터 전송
                 if len(nibp_data_queue) == nibp_data_queue.maxlen:
                     logger.info("WebSocket 연결 종료: 큐가 최대 용량에 도달했습니다.")
-                    # 큐의 첫 번째 값과 마지막 값을 로그로 출력
-                    logger.debug(f"큐의 첫 번째 데이터: {nibp_data_queue[0]}")
-                    logger.debug(f"큐의 마지막 데이터: {nibp_data_queue[-1]}")
                     
                     # 백엔드로 데이터 전송
                     await send_data_to_backend(device_id, username, "nibp", list(nibp_data_queue))
