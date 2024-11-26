@@ -73,18 +73,43 @@ async def send_data_to_backend(device_id, username, sensor_type, data):
     logger.debug(f"device_id: {payload['device_id']}, userId: {payload['userId']}, Payload: {payload}")
 
     try:
-        async with httpx.AsyncClient() as client:
-            response = await client.post(backend_url, json=payload)
-            if response.status_code == 200:
-                logger.info(f"{sensor_type} 데이터 전송 성공")
-                logger.info(f"서버 응답 메시지: {response.text}")
-                # 리스트인 경우만 clear 호출
-                if isinstance(payload_data, list):
-                    payload_data.clear()
-                else:
-                    logger.info(f"단일 값({payload_data})이므로 clear() 생략.")
+    async with httpx.AsyncClient() as client:
+        response = await client.post(backend_url, json=payload)
+        
+        if response.status_code == 200:
+            # 성공 로그 및 처리
+            logger.info(f"{sensor_type} 데이터 전송 성공")
+            logger.info(f"서버 응답 메시지: {response.text}")
+
+            # 데이터 전송 성공 시 리스트 초기화
+            if isinstance(payload_data, list):
+                payload_data.clear()
+                logger.info(f"{sensor_type} 큐 데이터 초기화 완료")
             else:
-                logger.error(f"{sensor_type} 데이터 전송 실패: {response.status_code}, 응답: {response.text}")
-    except Exception as e:
-        logger.error(f"{sensor_type} 데이터 전송 중 오류 발생: {e}")
+                logger.info(f"단일 값({payload_data})이므로 초기화 생략.")
+            
+            # 성공 응답 반환
+            return {"status": "success", "message": "데이터 전송 성공", "server_response": response.text}
+        else:
+            # 실패 로그 및 처리
+            logger.error(f"{sensor_type} 데이터 전송 실패: {response.status_code}, 응답: {response.text}")
+            
+            # 실패 응답 반환
+            return {
+                "status": "failure",
+                "message": "데이터 전송 실패",
+                "error_code": response.status_code,
+                "server_response": response.text,
+            }
+except Exception as e:
+    # 예외 처리
+    logger.error(f"{sensor_type} 데이터 전송 중 오류 발생: {e}")
+    
+    # 실패 응답 반환
+    return {
+        "status": "error",
+        "message": "데이터 전송 중 연결 실패",
+        "error_details": str(e),
+    }
+
 
