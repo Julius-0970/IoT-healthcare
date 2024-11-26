@@ -31,7 +31,7 @@ def parse_nibp_data(raw_data_hex):
 
     if sop != 0xF7:
         raise ValueError(f"잘못된 SOP: {sop:#04x}")
-    if cmd != 0x52:
+    if cmd != 0x42:
         raise ValueError(f"잘못된 CMD: {cmd:#04x}")
     if data_size != 0x04:
         raise ValueError(f"잘못된 DATA_SIZE: {data_size} (예상: 0x04)")
