@@ -45,7 +45,7 @@ async def send_data_to_backend(device_id, username, sensor_type, data):
     if isinstance(data, list):
         payload_data = list(data)  # 리스트인 경우 복사
         if sensor_type == "nibp":
-            nibp_values = payload_data["NIBP"][0]
+            nibp_values = payload_data[0]
             # Payload 생성
             payload = {
                 "device_id": device_id,
