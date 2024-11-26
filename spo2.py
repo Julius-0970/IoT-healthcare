@@ -2,6 +2,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from collections import deque
 from logger import get_logger  # 별도의 로깅 설정 가져오기
 # import struct  # 리틀 엔디안 데이터 처리를 위한 모듈
+from send_data_back import send_data_to_backend # 백엔드로의 전송로직
 
 # FastAPI 애플리케이션과 연결하는 router 명 지정
 spo2_router = APIRouter()
