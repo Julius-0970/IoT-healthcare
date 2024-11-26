@@ -51,10 +51,8 @@ def parse_spo2_packet(raw_data_hex):
     spo2 = raw_data_bytes[5]
 
     # 데이터 처리 결과 반환
-    return {
-        #"BPM": bpm,    # 추출된 BPM 값
-        "SpO2": spo2,  # 추출된 SpO2 값
-    }
+    return spo2
+
 
 # spO2 데이터를 WebSocket으로 수신하는 엔드포인트
 @spo2_router.websocket("/ws/spo2")
