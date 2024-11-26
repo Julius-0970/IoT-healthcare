@@ -95,10 +95,10 @@ async def websocket_spo2(websocket: WebSocket):
                     await websocket.send_text("spO2 data received successfully.")
                     
                     # 큐가 가득 찼을 때 데이터 전송
-                    if len(temperature_data_queue) == temperature_data_queue.maxlen:
+                    if len(spo2_data_queue) == spo2_data_queue.maxlen:
                         logger.info("큐가 최대 용량에 도달했습니다. 데이터를 서버로 전송합니다.")
                         # 데이터 전송
-                        await send_data_to_backend(device_id, username, "temp", spo2_data_queue[-1])
+                        await send_data_to_backend(device_id, username, "spo2", spo2_data_queue[-1])
                         
                         # 전송 성공 시 큐 초기화
                         spo2_data_queue.clear()
