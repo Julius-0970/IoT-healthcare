@@ -44,7 +44,8 @@ def parse_temp_data(raw_data_hex):
     # 온도 데이터 파싱
     high_byte = int.from_bytes(raw_data_bytes[3:5], byteorder="big")
     low_byte = int.from_bytes(raw_data_bytes[5:7], byteorder="big")
-    temperature_raw = high_byte + low_byte
+    # 온도 측정 센서 값이 정확히지 않아서 보정값을 줌.
+    temperature_raw = high_byte + low_byte + 4
     return temperature_raw / 100.0
 
 
