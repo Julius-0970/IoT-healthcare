@@ -4,6 +4,10 @@ from logger import get_logger
 from send_data_back import send_data_to_backend
 import asyncio
 
+
+# FastAPI 애플리케이션과 연결하는 라우터 지정
+receive_and_parsing_router = APIRouter()
+
 # 공통 로깅 설정
 logger = get_logger("sensor_logger")
 
