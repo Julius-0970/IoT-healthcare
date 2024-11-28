@@ -29,7 +29,7 @@ app.add_middleware(
     allow_methods=["*"],  # 모든 HTTP 메소드를 허용
     allow_headers=["*"],  # 모든 헤더를 허용
 )
-
+"""
 app.include_router(temp_router) # body_temp API 루트 경로 설정
 app.include_router(ecg_router) # ECG API 루트 경로 설정
 app.include_router(eog_router) # EOG API 루트 경로 설정
@@ -38,7 +38,8 @@ app.include_router(gsr_router) # GSR API 루트 경로 설정
 app.include_router(airflow_router) # airflow API 루트 경로 설정
 app.include_router(nibp_router) # NIBP API 루트 경로 설정
 app.include_router(spo2_router) # spO2 API 루트 경로 설정
-app.include_router(receive_and_parsing)
+"""
+app.include_router(receive_and_parsing) # 데이터를 읽어와서 파싱하는 API 루트 경로 설정
 
 
 # 루트 경로에 기본 응답을 추가
