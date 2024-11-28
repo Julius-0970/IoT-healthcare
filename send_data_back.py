@@ -108,8 +108,7 @@ async def send_data_to_backend(device_id, username, sensor_type, data):
                     "message": "데이터 전송 실패",
                     "error_code": response.status_code,
                     "server_response": response.text,
-                }
-"""
+                } 
     except httpx.HTTPStatusError as http_error:
         logger.error(f"HTTP 상태 오류: {http_error}")
         return {
@@ -131,4 +130,3 @@ async def send_data_to_backend(device_id, username, sensor_type, data):
             "message": "데이터 전송 중 연결 실패",
             "error_details": str(e),
         }
-"""
