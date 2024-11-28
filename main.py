@@ -7,18 +7,18 @@ from logger import get_logger  # 별도의 로깅 설정 가져오기
 
 #router로 main이 각 실행파일을 가져오도록 import
 from body_temp import temp_router
+"""
 from ecg import ecg_router
 from eog import eog_router
 from emg import emg_router
 from gsr import gsr_router
 from airflow import airflow_router
+"""
+logger = get_logger("sensor_logger")
 from nibp import nibp_router
 from spo2 import spo2_router
 
-# 이름 확인
-from valid_name import valid_router
-
-#from patient_dispatch import router
+from receive_and_parsing
 
 app = FastAPI() # fastapi의 인스턴스를 app이라는 변수에 할당. (쉽게 말하면 fastapi를 다룰 수 있는 리모컨을 app이라는 애한테 줘버린 것.)
 
@@ -39,7 +39,7 @@ app.include_router(gsr_router) # GSR API 루트 경로 설정
 app.include_router(airflow_router) # airflow API 루트 경로 설정
 app.include_router(nibp_router) # NIBP API 루트 경로 설정
 app.include_router(spo2_router) # spO2 API 루트 경로 설정
-app.include_router(valid_router)  # username 검증 API 루트 경로 설정
+app.include_router(receive_and_parsing)
 
 
 # 루트 경로에 기본 응답을 추가
