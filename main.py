@@ -6,7 +6,6 @@ from starlette.middleware.cors import CORSMiddleware
 from logger import get_logger  # 별도의 로깅 설정 가져오기
 
 #router로 main이 각 실행파일을 가져오도록 import
-from route import router
 from body_temp import temp_router
 from ecg import ecg_router
 from eog import eog_router
@@ -32,7 +31,6 @@ app.add_middleware(
     allow_headers=["*"],  # 모든 헤더를 허용
 )
 
-app.include_router(router)  # route.py API 루트 경로 설정
 app.include_router(temp_router) # body_temp API 루트 경로 설정
 app.include_router(ecg_router) # ECG API 루트 경로 설정
 app.include_router(eog_router) # EOG API 루트 경로 설정
