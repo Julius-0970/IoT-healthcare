@@ -14,11 +14,10 @@ from emg import emg_router
 from gsr import gsr_router
 from airflow import airflow_router
 """
-logger = get_logger("sensor_logger")
 from nibp import nibp_router
 from spo2 import spo2_router
 
-from receive_and_parsing
+from receive_and_parsing import receive_and_parsing_router
 
 app = FastAPI() # fastapi의 인스턴스를 app이라는 변수에 할당. (쉽게 말하면 fastapi를 다룰 수 있는 리모컨을 app이라는 애한테 줘버린 것.)
 
