@@ -120,7 +120,7 @@ async def handle_websocket(sensor_type: str, username: str, websocket: WebSocket
 
                 # 큐가 가득 찬 경우 백엔드로 전송
                 if len(user_queue) == user_queue.maxlen:
-                    backend_response = await send_data_to_backend(device_id, sensor_type, list(user_queue))
+                    backend_response = await send_data_to_backend(device_id, username, sensor_type, list(user_queue))
                     if backend_response["status"] == "success":
                         await websocket.send_text(f"{sensor_type.upper()} 데이터 전송 완료.")
                     else:
