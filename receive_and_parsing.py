@@ -80,7 +80,7 @@ def parse_sensor_data(sensor_type, raw_data_hex):
 
 # WebSocket 처리 함수
 # url에 타입별 경로를 지정
-@sensor_router.websocket("/ws/{sensor_type}")
+@receive_and_parsing_router.websocket("/ws/{sensor_type}")
 #센서 경로에서 type을 읽어옴
 async def handle_websocket(sensor_type: str, websocket: WebSocket):
     """
@@ -144,10 +144,7 @@ async def get_sensor_data(sensor_type):
         return {"status": "error", "message": f"{sensor_type.upper()} 데이터 없음~", "data": []}
     return {"status": "success", "message": f"{sensor_type.upper()} 데이터 조회 성공", "data": list(sensor_queue)}
 
-# 라우터 생성
-sensor_router = APIRouter()
-
 # 동적 라우트 등록(SENSOR_CONFIGS의 key값으로 임시함수를 통해 자동 경로 생성) ex) websocket: ws/ecg, GET : /ecg 
 for sensor_type in SENSOR_CONFIGS.keys():
-    sensor_router.websocket(f"/ws/{sensor_type}")(lambda websocket, s=sensor_type: handle_websocket(s, websocket))
-    sensor_router.get(f"/{sensor_type}")(lambda s=sensor_type: get_sensor_data(s))
+    receive_and_parsing_router.websocket(f"/ws/{sensor_type}")(lambda websocket, s=sensor_type: handle_websocket(s, websocket))
+    receive_and_parsing_router.get(f"/{sensor_type}")(lambda s=sensor_type: get_sensor_data(s))
