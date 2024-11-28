@@ -128,7 +128,7 @@ async def handle_websocket(sensor_type: str, username: str, websocket: WebSocket
                     logger.info(f"백엔드 응답: {backend_response}")
                     
                     if backend_response["status"] == "success":
-                        await websocket.send_text(f"{sensor_type.upper()} 데이터 전송 성공", "data": backend_response})
+                        await websocket.send_json(f"{sensor_type.upper()} 데이터 전송 성공", "data": backend_response})
                     else:
                         await websocket.send_json(f"{sensor_type.upper()} 데이터 전송 실패", "data": backend_response})
                     # 큐 초기화
