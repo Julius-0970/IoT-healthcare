@@ -2,7 +2,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from collections import deque  # deque를 사용하기 위한 import
 import logging  # 로깅 기능을 사용하기 위한 import
 from logger import get_logger  # 별도의 로깅 설정 가져오기
-from send_data_back import send_data_to_backend # 백엔드로의 전송로직
+from send_data_back import send_data_to_backend  # 백엔드로의 전송 로직
 import asyncio
 
 # FastAPI 애플리케이션과 연결하는 router 명 지정
@@ -83,7 +83,7 @@ async def websocket_ecg(websocket: WebSocket):
         # 클라이언트로부터 device_id 수신
         device_id = await websocket.receive_text()
         logger.info(f"수신된 장비 mac 정보: {device_id}")
-        
+
         # 클라이언트로부터 username 수신
         username = await websocket.receive_text()
         logger.info(f"수신된 사용자 이름: {username}")
@@ -103,7 +103,17 @@ async def websocket_ecg(websocket: WebSocket):
                 # 큐가 가득 찼을 때 데이터 전송
                 if len(ecg_data_queue) == ecg_data_queue.maxlen:
                     logger.info("WebSocket 연결 종료: 큐가 최대 용량에 도달했습니다.")
-                    await send_data_to_backend(device_id, username, "ecg", list(ecg_data_queue))
+                    backend_response = await send_data_to_backend(device_id, username, "ecg", list(ecg_data_queue))
+                    if backend_response["status"] == "success":
+                        await websocket.send_text("ECG data successfully sent to backend.")
+                    else:
+                        # 실패 JSON 응답을 클라이언트로 전송
+                        await websocket.send_json({
+                            "status": backend_response["status"],
+                            "message": backend_response["message"],
+                            "error_code": backend_response.get("error_code"),
+                            "server_response": backend_response.get("server_response")
+                        })
                     # WebSocket 연결 종료
                     await websocket.close(code=1000, reason="Queue reached maximum capacity")
 
@@ -117,13 +127,13 @@ async def websocket_ecg(websocket: WebSocket):
 
             except WebSocketDisconnect:
                 logger.info("WebSocket 연결 해제됨.")
+                await websocket.send_text("웹소켓 연결이 끊김")
                 break
             except Exception as e:
                 logger.error(f"데이터 처리 중 오류 발생: {e}")
-                await websocket.send_text("Internal server error.")
+                await websocket.send_text(f"Internal server error: {str(e)}")
     except Exception as e:
         logger.error(f"WebSocket 처리 중 오류 발생: {e}")
-
 
 # ECG 데이터를 조회하는 기존 HTTP GET 엔드포인트
 @ecg_router.get("/ecg")
