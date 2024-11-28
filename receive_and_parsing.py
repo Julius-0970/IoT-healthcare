@@ -20,7 +20,11 @@ SENSOR_CONFIGS = {
     "eog": {"cmd": 0x32, "data_size": 0x50, "queue_size": 15000},
     "gsr": {"cmd": 0x82, "data_size": 0x50, "queue_size": 15000},
     "airflow": {"cmd": 0x62, "data_size": 0x50, "queue_size": 15000},
+    "temp": {"cmd": 0xa2, "data_size": 0x04, "queue_size": 60},
+    "nibp": {"cmd": 0x42, "data_size": 0x04, "queue_size": 1},
+    "spo2": {"cmd": 0x52, "data_size": 0x04, "queue_size": 10},
     # 추가 센서 설정 가능
+    # 아직 temp, spo2, nibp 로직 미구현
 }
 
 # 사용자별 센서별 큐 저장
@@ -121,10 +125,13 @@ async def handle_websocket(sensor_type: str, username: str, websocket: WebSocket
                 # 큐가 가득 찬 경우 백엔드로 전송
                 if len(user_queue) == user_queue.maxlen:
                     backend_response = await send_data_to_backend(device_id, username, sensor_type, list(user_queue))
+                    logger.info(f"백엔드 응답: {backend_response}")
+                    
                     if backend_response["status"] == "success":
-                        await websocket.send_text(f"{sensor_type.upper()} 데이터 전송 완료.")
+                        await websocket.send_text(f"{sensor_type.upper()} 데이터 전송 성공", "data": backend_response})
                     else:
-                        await websocket.send_json(backend_response)
+                        await websocket.send_json(f"{sensor_type.upper()} 데이터 전송 실패", "data": backend_response})
+                    # 큐 초기화
                     user_queue.clear()
             except WebSocketDisconnect:
                 logger.info(f"[{sensor_type}] WebSocket 연결 해제됨 (사용자: {username}).")
