@@ -116,21 +116,37 @@ async def handle_websocket(sensor_type: str, username: str, websocket: WebSocket
                 raw_data_hex = (await websocket.receive_bytes()).hex()
                 parsed_values = parse_sensor_data(sensor_type, raw_data_hex)
 
-                # 파싱된 데이터 큐에 추가
                 if parsed_values:
                     user_queue.extend(parsed_values)
                     logger.info(f"[{sensor_type}] {len(parsed_values)}개의 데이터가 저장되었습니다.")
                     await websocket.send_text(f"파싱 성공: {len(parsed_values)} {sensor_type.upper()} 데이터")
 
-                # 큐가 가득 찬 경우 백엔드로 전송
+                # 파싱된 데이터 큐에 추가
                 if len(user_queue) == user_queue.maxlen:
                     backend_response = await send_data_to_backend(device_id, username, sensor_type, list(user_queue))
                     logger.info(f"백엔드 응답: {backend_response}")
-                    
+
+                    # WebSocket 응답 처리
                     if backend_response["status"] == "success":
-                        await websocket.send_json(f"{sensor_type.upper()} 데이터 전송 성공", "data": backend_response})
+                        await websocket.send_json({
+                            "status": "success",
+                            "message": f"{sensor_type.upper()} 데이터 전송 성공",
+                            "server_response": backend_response["server_response"]
+                        })
+                    elif backend_response["status"] == "failure":
+                        await websocket.send_json({
+                            "status": "failure",
+                            "message": f"{sensor_type.upper()} 데이터 전송 실패",
+                            "error_code": backend_response.get("error_code", "N/A"),
+                            "server_response": backend_response["server_response"]
+                        })
                     else:
-                        await websocket.send_json(f"{sensor_type.upper()} 데이터 전송 실패", "data": backend_response})
+                        await websocket.send_json({
+                            "status": "error",
+                            "message": f"{sensor_type.upper()} 데이터 전송 중 오류 발생",
+                            "error_details": backend_response.get("error_details", "N/A")
+                        })
+                
                     # 큐 초기화
                     user_queue.clear()
             except WebSocketDisconnect:
