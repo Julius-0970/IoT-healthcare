@@ -3,6 +3,7 @@ from collections import deque
 from logger import get_logger
 from send_data_back import send_data_to_backend
 import asyncio
+from functools import partial
 
 
 # FastAPI 애플리케이션과 연결하는 라우터 지정
@@ -21,8 +22,8 @@ SENSOR_CONFIGS = {
     # 추가 센서 설정 가능
 }
 
-# 센서별 큐 저장
-sensor_queues = {sensor: deque(maxlen=config["queue_size"]) for sensor, config in SENSOR_CONFIGS.items()}
+# 사용자별 센서별 큐 저장
+user_queues = defaultdict(lambda: {})
 
 # 공통 파싱 함수
 def parse_sensor_data(sensor_type, raw_data_hex):
@@ -62,6 +63,7 @@ def parse_sensor_data(sensor_type, raw_data_hex):
         data_values = []
 
         #data부분을 4바이트씩 잘라서 파싱(파형 데이터의 경우 분석처리)
+        # data : 0040 2000 0000으로 나눠서 00+40+2000+0000으로 처리 
         for i in range(0, len(data), 4):
             if i + 4 > len(data): # 80
                 break
@@ -79,72 +81,84 @@ def parse_sensor_data(sensor_type, raw_data_hex):
         return []
 
 # WebSocket 처리 함수
-# url에 타입별 경로를 지정
-@receive_and_parsing_router.websocket("/ws/{sensor_type}")
-#센서 경로에서 type을 읽어옴
-async def handle_websocket(sensor_type: str, websocket: WebSocket):
+@receive_and_parsing_router.websocket("/ws/{username}/{sensor_type}")
+async def handle_websocket(sensor_type: str, username: str, websocket: WebSocket):
     """
     공통 WebSocket 처리 함수.
+    :param sensor_type: 센서 유형 (예: ecg, emg 등)
+    :param username: 사용자 이름
+    :param websocket: WebSocket 연결 객체
     """
     await websocket.accept()
-    logger.info(f"[{sensor_type}] WebSocket 연결 수락됨.")
-    sensor_queue = sensor_queues[sensor_type]
-    # 시작시 혹시 모를 남아있는 데이터 삭제.
-    sensor_queue.clear()
-    logger.info(f"[{sensor_type}] 데이터 큐가 초기화되었습니다.")
+    logger.info(f"[{sensor_type}] WebSocket 연결 수락됨 (사용자: {username}).")
 
     try:
-        # 클라이언트로부터 device_id와 username 수신
+        # 장치 ID 수신
         device_id = await websocket.receive_text()
-        username = await websocket.receive_text()
-        logger.info(f"[{sensor_type}] 수신된 장비 ID: {device_id}, 사용자 이름: {username}")
+        logger.info(f"[{sensor_type}] 수신된 장비 ID: {device_id}, 사용자: {username}")
+
+        # 사용자별 센서 큐 생성
+        if username not in user_queues:
+            user_queues[username] = {
+                sensor: deque(maxlen=SENSOR_CONFIGS[sensor]["queue_size"])
+                for sensor in SENSOR_CONFIGS.keys()
+            }
+        user_queue = user_queues[username][sensor_type]
 
         while True:
             try:
-                data = await websocket.receive_bytes()
-                raw_data_hex = data.hex()
+                # 데이터 수신 및 파싱
+                raw_data_hex = (await websocket.receive_bytes()).hex()
                 parsed_values = parse_sensor_data(sensor_type, raw_data_hex)
 
-                # 파싱된 데이터가 존재할때 각 타입에 맞는 센서의 큐로 적재
+                # 파싱된 데이터 큐에 추가
                 if parsed_values:
-                    sensor_queue.extend(parsed_values)
-                    logger.info(f"[{sensor_type}] {len(parsed_values)}개의 데이터가 큐에 저장되었습니다.")
-                    await websocket.send_text(f"파싱 및 적재 성공 {len(parsed_values)} {sensor_type.upper()}") #대문자 표기
+                    user_queue.extend(parsed_values)
+                    logger.info(f"[{sensor_type}] {len(parsed_values)}개의 데이터가 저장되었습니다.")
+                    await websocket.send_text(f"파싱 성공: {len(parsed_values)} {sensor_type.upper()} 데이터")
 
-                # 큐가 가득 찼을 때 데이터 전송
-                if len(sensor_queue) == sensor_queue.maxlen:
-                    backend_response = await send_data_to_backend(device_id, username, sensor_type, list(sensor_queue))
+                # 큐가 가득 찬 경우 백엔드로 전송
+                if len(user_queue) == user_queue.maxlen:
+                    backend_response = await send_data_to_backend(device_id, sensor_type, list(user_queue))
                     if backend_response["status"] == "success":
-                        await websocket.send_text(f"{sensor_type.upper()} 데이터 전송완료되었습니다.")
+                        await websocket.send_text(f"{sensor_type.upper()} 데이터 전송 완료.")
                     else:
-                        await websocket.send_json(backend_response["server_response"])
-
-                    # 큐 초기화 및 연결 종료
-                    sensor_queue.clear()
-                    logger.info(f"[{sensor_type}] 데이터 큐가 초기화되었습니다.")
-                    # 웹소켓 통신 종료.
-                    await websocket.close(code=1000, reason="Queue reached maximum capacity")
-                    return
+                        await websocket.send_json(backend_response)
+                    user_queue.clear()
             except WebSocketDisconnect:
-                logger.info(f"[{sensor_type}] WebSocket 연결 해제됨.")
+                logger.info(f"[{sensor_type}] WebSocket 연결 해제됨 (사용자: {username}).")
                 break
             except Exception as e:
                 logger.error(f"[{sensor_type}] 데이터 처리 중 오류 발생: {e}")
                 await websocket.send_text("Internal server error.")
-    except Exception as e:
-        logger.error(f"[{sensor_type}] WebSocket 처리 중 오류 발생: {e}")
+    finally:
+        # 사용자 큐 삭제
+        if username in user_queues:
+            del user_queues[username]
+            logger.info(f"사용자 {username}의 큐 삭제됨.")
 
 # HTTP GET 엔드포인트 처리 함수
-async def get_sensor_data(sensor_type):
+@receive_and_parsing_router.get("/data/{username}/{sensor_type}")
+async def get_sensor_data(sensor_type: str, username: str):
     """
     공통 HTTP GET 처리 함수.
+    :param sensor_type: 센서 유형
+    :param username: 사용자 이름
+    :return: 센서 데이터 큐 상태
     """
-    sensor_queue = sensor_queues[sensor_type]
-    if not sensor_queue:
-        return {"status": "error", "message": f"{sensor_type.upper()} 데이터 없음~", "data": []}
-    return {"status": "success", "message": f"{sensor_type.upper()} 데이터 조회 성공", "data": list(sensor_queue)}
+    if username not in user_queues or sensor_type not in user_queues[username]:
+        return {"status": "error", "message": f"{sensor_type.upper()} 데이터 없음.", "data": []}
+    return {
+        "status": "success",
+        "message": f"{sensor_type.upper()} 데이터 조회 성공",
+        "data": list(user_queues[username][sensor_type]),
+    }
 
-# 동적 라우트 등록(SENSOR_CONFIGS의 key값으로 임시함수를 통해 자동 경로 생성) ex) websocket: ws/ecg, GET : /ecg 
+# 라우터 등록
 for sensor_type in SENSOR_CONFIGS.keys():
-    receive_and_parsing_router.websocket(f"/ws/{sensor_type}")(lambda websocket, s=sensor_type: handle_websocket(s, websocket))
-    receive_and_parsing_router.get(f"/{sensor_type}")(lambda s=sensor_type: get_sensor_data(s))
+    # WebSocket 경로를 등록
+    receive_and_parsing_router.websocket(f"/ws/{{username}}/{sensor_type}")(partial(handle_websocket, sensor_type))
+    logger.info(f"WebSocket 경로 등록: /ws/{{username}}/{sensor_type}")
+    # HTTP GET 경로를 등록
+    receive_and_parsing_router.get(f"/data/{{username}}/{sensor_type}")(partial(get_sensor_data, sensor_type))
+    logger.info(f"HTTP GET 경로 등록: /data/{{username}}/{sensor_type}")
