@@ -41,35 +41,22 @@ async def send_data_to_backend(device_id, username, sensor_type, data):
     logger.debug(f"선택된 서버 URL: {backend_url}")
 
     # 센서별 데이터 처리
-    payload = {"device_id": device_id, "userid": username}
-
-    if sensor_type == "temp":
-        # temp는 단일 값으로 처리
-        if isinstance(data, list):
-            data = data[-1]  # 최신 값만 전송
-        payload["temperature"] = data
-
-    elif sensor_type == "nibp":
-        # nibp는 리스트의 첫 번째 요소로 수축기, 이완기 값을 전송
-        if isinstance(data, list):
-            nibp_values = data[0]  # NIBP 데이터는 [{"systolic": x, "diastolic": y}] 형태
-            payload["systolic"] = nibp_values.get("systolic", 0)
-            payload["diastolic"] = nibp_values.get("diastolic", 0)
-
-    elif sensor_type == "spo2":
-        # spo2는 단일 값으로 처리
-        if isinstance(data, list):
-            data = data[-1]  # 최신 값만 전송
-        payload["spo2"] = data
-
+    if isinstance(data, list):
+        # 데이터가 리스트일 경우, 마지막 값만 선택 (단, 파형 데이터는 전체 전송)
+        payload_data = data if sensor_type not in ["temp", "spo2"] else data[-1]
     else:
-        # 파형 데이터 (ECG, EOG 등)의 경우
-        if isinstance(data, list):
-            payload[f"{sensor_type}data"] = data
-        else:
-            payload[f"{sensor_type}data"] = [data]
+        # 단일 값일 경우 그대로 전송
+        payload_data = data
 
-     #logger.debug(f"생성된 Payload: {payload}")
+    # 공통 Payload 생성
+    payload = {
+        "device_id": device_id,
+        "userid": username,
+        f"{sensor_type}data": payload_data  # 센서 타입에 따라 키 생성
+    }
+
+    # Payload 생성 로그
+    #logger.debug(f"생성된 Payload: {payload}")
 
     try:
         async with httpx.AsyncClient() as client:
