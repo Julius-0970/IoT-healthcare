@@ -69,7 +69,7 @@ async def send_data_to_backend(device_id, username, sensor_type, data):
         else:
             payload[f"{sensor_type}_data"] = [data]
 
-    logger.debug(f"생성된 Payload: {payload}")
+     #logger.debug(f"생성된 Payload: {payload}")
 
     try:
         async with httpx.AsyncClient() as client:
