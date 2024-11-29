@@ -78,7 +78,7 @@ def parse_sensor_data(sensor_type, raw_data_hex):
             real_value = byte1 + byte2 + fixed_value
             data_values.append(real_value)
 
-        logger.info(f"[{sensor_type}] 파싱된 데이터 값 수: {len(data_values)}")
+        #logger.info(f"[{sensor_type}] 파싱된 데이터 값 수: {len(data_values)}")
         return data_values
 
     except Exception as e:
@@ -118,7 +118,7 @@ async def handle_websocket(sensor_type: str, username: str, websocket: WebSocket
 
                 if parsed_values:
                     user_queue.extend(parsed_values)
-                    logger.info(f"[{sensor_type}] {len(parsed_values)}개의 데이터가 저장되었습니다.")
+                    #logger.info(f"[{sensor_type}] {len(parsed_values)}개의 데이터가 저장되었습니다.")
                     await websocket.send_text(f"파싱 성공: {len(parsed_values)} {sensor_type.upper()} 데이터")
 
                 # 파싱된 데이터 큐에 추가
