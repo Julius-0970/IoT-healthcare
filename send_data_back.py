@@ -65,9 +65,9 @@ async def send_data_to_backend(device_id, username, sensor_type, data):
     else:
         # 파형 데이터 (ECG, EOG 등)의 경우
         if isinstance(data, list):
-            payload[f"{sensor_type}_data"] = data
+            payload[f"{sensor_type}data"] = data
         else:
-            payload[f"{sensor_type}_data"] = [data]
+            payload[f"{sensor_type}data"] = [data]
 
      #logger.debug(f"생성된 Payload: {payload}")
 
