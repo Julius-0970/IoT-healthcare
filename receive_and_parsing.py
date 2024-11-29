@@ -162,7 +162,7 @@ async def handle_websocket(sensor_type: str, username: str, websocket: WebSocket
             logger.info(f"사용자 {username}의 큐 삭제됨.")
 
 # HTTP GET 엔드포인트 처리 함수
-@receive_and_parsing_router.get("/data/{username}/{sensor_type}")
+@receive_and_parsing_router.get("/{username}/{sensor_type}")
 async def get_sensor_data(sensor_type: str, username: str):
     """
     공통 HTTP GET 처리 함수.
@@ -184,5 +184,5 @@ for sensor_type in SENSOR_CONFIGS.keys():
     receive_and_parsing_router.websocket(f"/ws/{{username}}/{sensor_type}")(partial(handle_websocket, sensor_type))
     logger.info(f"WebSocket 경로 등록: /ws/{{username}}/{sensor_type}")
     # HTTP GET 경로를 등록
-    receive_and_parsing_router.get(f"/data/{{username}}/{sensor_type}")(partial(get_sensor_data, sensor_type))
-    logger.info(f"HTTP GET 경로 등록: /data/{{username}}/{sensor_type}")
+    receive_and_parsing_router.get(f"{{username}}/{sensor_type}")(partial(get_sensor_data, sensor_type))
+    logger.info(f"HTTP GET 경로 등록: {{username}}/{sensor_type}")
