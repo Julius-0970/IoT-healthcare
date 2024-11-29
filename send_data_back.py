@@ -1,5 +1,6 @@
 import httpx
 import json
+import requests
 from logger import get_logger
 
 logger = get_logger("data_sender")
@@ -87,6 +88,7 @@ async def send_data_to_backend(device_id, username, sensor_type, data):
                     "error_code": response.status_code,
                     "server_response": response.text,
                 }
+                
     except httpx.HTTPStatusError as http_error:
         logger.error(f"HTTP 상태 오류: {http_error}")
         return {
