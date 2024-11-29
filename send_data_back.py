@@ -57,57 +57,33 @@ async def send_data_to_backend(device_id, username, sensor_type, data):
     }
 
     # Payload 생성 로그
-    #logger.debug(f"생성된 Payload: {payload}")
+    # logger.debug(f"생성된 Payload: {payload}")
 
-    try:
-        async with httpx.AsyncClient() as client:
-            response = await client.post(backend_url, json=payload)
+    async with httpx.AsyncClient() as client:
+        response = await client.post(backend_url, json=payload)
 
-            logger.info(f"서버 상태 코드: {response.status_code}")
-            logger.info(f"서버 응답 본문: {response.text}")
+        logger.info(f"서버 상태 코드: {response.status_code}")
+        logger.info(f"서버 응답 본문: {response.text}")
 
-            if response.status_code == 200:
-                try:
-                    response_json = response.json()
-                    logger.info(f"서버 응답 JSON: {response_json}")
-                except Exception as json_error:
-                    logger.warning(f"JSON 디코딩 실패, 응답 본문 그대로 사용: {response.text}")
-                    response_json = {"raw_response": response.text}
+        if response.status_code == 200:
+            try:
+                response_json = response.json()
+                logger.info(f"서버 응답 JSON: {response_json}")
+            except Exception as json_error:
+                logger.warning(f"JSON 디코딩 실패, 응답 본문 그대로 사용: {response.text}")
+                response_json = {"raw_response": response.text}
 
-                logger.info(f"{sensor_type} 데이터 전송 성공")
-                return {
-                    "status": "success",
-                    "message": "데이터 전송 성공",
-                    "server_response": response_json,
-                }
-            else:
-                logger.error(f"{sensor_type} 데이터 전송 실패: {response.status_code}, 응답: {response.text}")
-                return {
-                    "status": "failure",
-                    "message": "데이터 전송 실패",
-                    "error_code": response.status_code,
-                    "server_response": response.text,
-                }
-"""           
-    except httpx.HTTPStatusError as http_error:
-        logger.error(f"HTTP 상태 오류: {http_error}")
-        return {
-            "status": "error",
-            "message": "HTTP 상태 오류 발생",
-            "error_details": str(http_error),
-        }
-    except httpx.RequestError as request_error:
-        logger.error(f"요청 오류: {request_error}")
-        return {
-            "status": "error",
-            "message": "서버 요청 중 오류 발생",
-            "error_details": str(request_error),
-        }
-    except Exception as e:
-        logger.error(f"{sensor_type} 데이터 전송 중 예기치 못한 오류 발생: {e}")
-        return {
-            "status": "error",
-            "message": "데이터 전송 중 연결 실패",
-            "error_details": str(e),
-        }
-"""
+            logger.info(f"{sensor_type} 데이터 전송 성공")
+            return {
+                "status": "success",
+                "message": "데이터 전송 성공",
+                "server_response": response_json,
+            }
+        else:
+            logger.error(f"{sensor_type} 데이터 전송 실패: {response.status_code}, 응답: {response.text}")
+            return {
+                "status": "failure",
+                "message": "데이터 전송 실패",
+                "error_code": response.status_code,
+                "server_response": response.text,
+            }
