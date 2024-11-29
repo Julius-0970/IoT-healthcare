@@ -146,7 +146,8 @@ async def handle_websocket(sensor_type: str, username: str, websocket: WebSocket
                             "message": f"{sensor_type.upper()} 데이터 전송 중 오류 발생",
                             "error_details": backend_response.get("error_details", "N/A")
                         })
-                
+                    # 클라이언트와의 통신을 끊음.
+                    await websocket.close(code=1000, reason="Queue reached maximum capacity")
                     # 큐 초기화
                     user_queue.clear()
             except WebSocketDisconnect:
