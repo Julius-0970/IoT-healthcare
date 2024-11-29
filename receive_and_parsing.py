@@ -5,6 +5,7 @@ from send_data_back import send_data_to_backend
 import asyncio
 from functools import partial
 from collections import defaultdict
+import requests
 
 
 # FastAPI 애플리케이션과 연결하는 라우터 지정
