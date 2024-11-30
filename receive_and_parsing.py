@@ -92,7 +92,7 @@ def parse_sensor_data(sensor_type, raw_data_hex):
 
         elif packet_length == 86:
             if received_cmd == 0x12:  # ECG 데이터
-                logger.info(f"[{sensor_type}] ECG 데이터 파싱 로직 실행")
+                #logger.info(f"[{sensor_type}] ECG 데이터 파싱 로직 실행")
                 data = raw_data_bytes[3:-1]
                 data_values = []
                 for i in range(0, len(data), 4):
@@ -207,13 +207,13 @@ async def handle_websocket(sensor_type: str, username: str, websocket: WebSocket
                 # 데이터 수신 및 파싱
                 data = await websocket.receive_bytes()
                 raw_data_hex = data.hex()
-                logger.debug(f"수신된 데이터: {raw_data_hex}")
+                #logger.debug(f"수신된 데이터: {raw_data_hex}")
 
                 # 데이터 파싱
                 parsed_values = parse_sensor_data(sensor_type, raw_data_hex)
                 if parsed_values:
                     user_queue.extend(parsed_values)
-                    logger.info(f"[{sensor_type}] {len(parsed_values)}개의 데이터가 저장되었습니다.")
+                    #logger.info(f"[{sensor_type}] {len(parsed_values)}개의 데이터가 저장되었습니다.")
                     await websocket.send_text(f"파싱 성공: {len(parsed_values)} {sensor_type.upper()} 데이터")
 
                 # 큐가 가득 찼을 경우, 백엔드로 데이터 전송
