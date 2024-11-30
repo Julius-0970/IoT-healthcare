@@ -255,7 +255,7 @@ async def handle_websocket(sensor_type: str, username: str, websocket: WebSocket
                 break
     finally:
         # 큐 삭제 및 자원 정리
-        del user_queues[username][sensor_type]
+        user_queues[username][sensor_type].clear()
         logger.info(f"[{sensor_type}] 큐 삭제 완료 (사용자: {username}).")
 
 # HTTP GET 엔드포인트 처리 함수
