@@ -72,16 +72,6 @@ async def send_data_to_backend(device_id, username, sensor_type, data):
     try:
         async with httpx.AsyncClient() as client:
             response = await client.post(backend_url, json=payload)
-            if response.status_code == 200:
-                logger.info(f"{sensor_type} 데이터 전송 성공")
-                logger.info(f"서버 응답 메시지: {response.text}")
-                # 리스트인 경우만 clear 호출
-                if isinstance(payload_data, list):
-                    payload_data.clear()
-                else:
-                    logger.info(f"단일 값({payload_data})이므로 clear() 생략.")
-            else:
-                # 만약 userid가 없어서 반환된것이라면, 클라이언트에 메세지를 반환해야함.(이 코드는 반환 메세지를 자세히 봐야할 거 같아.
-                logger.error(f"{sensor_type} 데이터 전송 실패: {response.status_code}, 응답: {response.text}")
-    except Exception as e:
-        logger.error(f"{sensor_type} 데이터 전송 중 오류 발생: {e}")
+            # 상태 코드와 서버 응답 메시지 로그
+            logger.info(f"HTTP 상태 코드: {response.status_code}")
+            logger.info(f"서버 응답 메시지: {response.text}")
