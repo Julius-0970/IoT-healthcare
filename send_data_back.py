@@ -72,6 +72,13 @@ async def send_data_to_backend(device_id, username, sensor_type, data):
     try:
         async with httpx.AsyncClient() as client:
             response = await client.post(backend_url, json=payload)
+
             # 상태 코드와 서버 응답 메시지 로그
             logger.info(f"HTTP 상태 코드: {response.status_code}")
             logger.info(f"서버 응답 메시지: {response.text}")
+            
+            # 응답 반환
+            return {
+                "status_code": response.status_code,
+                "server_response": response.text
+            }
