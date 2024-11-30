@@ -223,8 +223,7 @@ async def handle_websocket(sensor_type: str, username: str, websocket: WebSocket
                         })
                     # 클라이언트와의 통신을 끊음.
                     await websocket.close(code=1000, reason="Queue reached maximum capacity")
-                    # 큐 초기화
-                    user_queue.clear()
+                    logger.info(f"사용자 {username}와의 연결 종료")
             except WebSocketDisconnect:
                 logger.info(f"[{sensor_type}] WebSocket 연결 해제됨 (사용자: {username}).")
                 break
