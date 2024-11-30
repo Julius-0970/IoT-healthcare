@@ -38,75 +38,50 @@ async def send_data_to_backend(device_id, username, sensor_type, data):
     if not backend_url:
         logger.error(f"센서 종류 '{sensor_type}'에 해당하는 URL이 없습니다.")
         return
-
+        
     logger.debug(f"선택된 서버 URL: {backend_url}")
-
     # 단일 값인지, 리스트인지 확인
     if isinstance(data, list):
         payload_data = list(data)  # 리스트인 경우 복사
         if sensor_type == "nibp":
-            nibp_values = payload_data[0]
             # Payload 생성
             payload = {
                 "device_id": device_id,
-                "userId": username,
-                "systolic": nibp_values[0] + 10,
-                "diastolic": nibp_values[-1]
+                "userid": username,
+                "systolic": payload_data[0],
+                "diastolic": payload_data[-1]
             }
         else:
             # Payload 생성
             payload = {
                 "device_id": device_id,
-                "userId": username,
+                "userid": username,
                 f"{sensor_type}data": payload_data
             }
     else:
-        single_data = data  # 단일 값인 경우 들어온 값 그대로 전송
+        payload_data = data  # 단일 값인 경우 들어온 값 그대로 전송
         # Payload 생성
         payload = {
             "device_id": device_id,
-            "userId": username,
-            f"{sensor_type}data": single_data
+            "userid": username,
+            f"{sensor_type}data": payload_data
         }
-
     # Payload 생성 로그
-    logger.debug(f"device_id: {payload['device_id']}, userId: {payload['userId']}, Payload: {payload}")
+    logger.debug(f"device_id: {payload['device_id']}, userid: {payload['userid']}")
 
     try:
         async with httpx.AsyncClient() as client:
             response = await client.post(backend_url, json=payload)
             if response.status_code == 200:
-                # 성공 로그 및 처리
                 logger.info(f"{sensor_type} 데이터 전송 성공")
                 logger.info(f"서버 응답 메시지: {response.text}")
-
-                # 데이터 전송 성공 시 리스트 초기화
+                # 리스트인 경우만 clear 호출
                 if isinstance(payload_data, list):
                     payload_data.clear()
-                    logger.info(f"{sensor_type} 큐 데이터 초기화 완료")
                 else:
-                    logger.info(f"단일 값({payload_data})이므로 초기화 생략.")
-                
-                # 성공 응답 반환
-                return {"status": "success", "message": "데이터 전송 성공", "server_response": response.text}
+                    logger.info(f"단일 값({payload_data})이므로 clear() 생략.")
             else:
-                # 실패 로그 및 처리
+                # 만약 userid가 없어서 반환된것이라면, 클라이언트에 메세지를 반환해야함.(이 코드는 반환 메세지를 자세히 봐야할 거 같아.
                 logger.error(f"{sensor_type} 데이터 전송 실패: {response.status_code}, 응답: {response.text}")
-                
-                # 실패 응답 반환
-                return {
-                    "status": "failure",
-                    "message": "데이터 전송 실패",
-                    "error_code": response.status_code,
-                    "server_response": response.text,
-                }
     except Exception as e:
-        # 예외 처리
         logger.error(f"{sensor_type} 데이터 전송 중 오류 발생: {e}")
-        
-        # 실패 응답 반환
-        return {
-            "status": "error",
-            "message": "데이터 전송 중 연결 실패",
-            "error_details": str(e),
-        }
