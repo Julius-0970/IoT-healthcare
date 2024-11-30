@@ -183,12 +183,16 @@ async def handle_websocket(sensor_type: str, username: str, websocket: WebSocket
     :param websocket: WebSocket 연결 객체
     """
     await websocket.accept()
-    logger.info(f"[{sensor_type}] WebSocket 연결 수락됨 (사용자: {username}).")
+    logger.info("WebSocket 연결 수락됨.")
 
     try:
         # 클라이언트로부터 device_id 수신
         device_id = await websocket.receive_text()
         logger.info(f"수신된 장비 mac 정보: {device_id}")
+
+        # 클라이언트로부터 username 수신
+        username = await websocket.receive_text()
+        logger.info(f"수신된 사용자 이름: {username}")
 
         # 사용자별 센서 큐 생성
         if username not in user_queues:
