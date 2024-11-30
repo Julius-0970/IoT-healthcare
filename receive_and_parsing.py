@@ -114,8 +114,13 @@ def parse_sensor_data(sensor_type, raw_data_hex):
                         break
                     byte1 = data[i]
                     byte2 = data[i + 1]
-                    fixed_value = int.from_bytes(data[i + 2:i + 4], byteorder="big")
-                    real_value = byte1 + byte2 + fixed_value
+                    byte3 = data[i + 2]
+                    byte4 = data[i + 3]
+                    #fixed_value = int.from_bytes(data[i + 2:i + 4], byteorder="big")
+                    real_value = byte1 + byte2 + byte3 + byte4
+                    # 값이 0xFFFF일 경우 -1로 치환
+                    if real_value == 0xFFFF:
+                        real_value = -1
                     data_values.append(real_value)
                 return data_values
 
