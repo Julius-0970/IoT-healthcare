@@ -160,6 +160,7 @@ def parse_sensor_data(sensor_type, raw_data_hex):
                     # 값이 0xFFFF일 경우 -1로 치환
                     if real_value == 65535:
                         data_values.append(-1)
+                        return data_values
                     data_values.append(real_value)
                 return data_values
 
