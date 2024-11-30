@@ -154,8 +154,8 @@ def parse_sensor_data(sensor_type, raw_data_hex):
                 for i in range(0, len(data), 2):
                     if i + 2 > len(data):
                         break
-                    first_value = int.from_bytes(data[i:i + 2], byteorder="big")  # 00FF
-                    second_value = int.from_bytes(data[i + 2:i + 4], byteorder="big")  # FF00
+                    byte1 = int.from_bytes(data[i:i + 2], byteorder="big")  # 00FF
+                    byte2 = int.from_bytes(data[i + 2:i + 4], byteorder="big")  # FF00
                     real_value = byte1 + byte2
                     # 값이 0xFFFF일 경우 -1로 치환
                     if real_value == 65535:
