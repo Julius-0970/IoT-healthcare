@@ -70,7 +70,7 @@ async def send_data_to_backend(device_id, username, sensor_type, data):
         }
 
     # Payload 생성 로그
-    logger.debug(f"device_id: {payload['device_id']}, userid: {payload['userId']}")
+    logger.debug(f"device_id: {payload['device_id']}, userid: {payload['userid']}")
 
     try:
         async with httpx.AsyncClient() as client:
