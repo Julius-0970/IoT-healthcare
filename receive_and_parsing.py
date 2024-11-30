@@ -224,7 +224,8 @@ async def handle_websocket(sensor_type: str, username: str, websocket: WebSocket
                     #큐 초기화
                     user_queue.clear()
                     logger.info(f"[{sensor_type}] 큐 초기화 완료")
-                    """
+
+                    
                     # WebSocket 응답 처리
                     if backend_response.get("status_code") == 200:
                         logger.info(f"[{sensor_type}] 데이터 전송 성공")
@@ -241,7 +242,8 @@ async def handle_websocket(sensor_type: str, username: str, websocket: WebSocket
                             "error_code": backend_response.get("status_code", "N/A"),
                             "server_response": backend_response.get("server_response", "N/A")
                         })
-                    """
+                    # 클라이언트와의 통신을 끊음.
+                    await websocket.close(code=1000, reason="Queue reached maximum capacity")
             except WebSocketDisconnect:
                 logger.warning(f"[{sensor_type}] WebSocket 연결 끊김 (사용자: {username}).")
                 break
