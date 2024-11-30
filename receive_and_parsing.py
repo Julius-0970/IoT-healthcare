@@ -47,44 +47,118 @@ def parse_sensor_data(sensor_type, raw_data_hex):
         cmd = config["cmd"]
         data_size = config["data_size"]
 
-        # 패킷 길이 확인(파형 데이터의 경우 패킷의 길이가 86)
-        if packet_length != 86:
-            logger.error(f"[{sensor_type}] 잘못된 패킷 길이: {packet_length} bytes (예상: 86 bytes)")
-            return []
-
         # 패킷의 sop, cmd, data size, eop 데이터 부분을 제외한 부분들을 검증
-        # 패킷의 구조: sop, cmd, data size, data, eop
         sop = raw_data_bytes[0]
         received_cmd = raw_data_bytes[1]
         received_data_size = raw_data_bytes[2]
         eop = raw_data_bytes[-1]
 
         # sop는 f7, eop는 fa, cmd 그리고 data size는 SENSOR_CONFIGS에 맞게 검증
-        if sop != 0xF7 or received_cmd != cmd or received_data_size != data_size or eop != 0xFA:
+        if sop != 0xF7 or eop != 0xFA:
             logger.error(f"[{sensor_type}] 패킷 헤더/트레일러 불일치")
             return []
 
-        # 데이터 파싱
-        data = raw_data_bytes[3:-1]
-        data_values = []
+        # 패킷 길이에 따른 처리
+        if packet_length == 10:
+            if received_cmd == 0x52:  # SPO2 데이터
+                logger.info(f"[{sensor_type}] SPO2 데이터 파싱 로직 실행")
+                data = raw_data_bytes[3:-1]
+                data_values = []
+                for i in range(0, len(data), 2):  # 2바이트씩 처리
+                    value = int.from_bytes(data[i:i+2], byteorder="big")
+                    data_values.append(value)
+                return data_values
 
-        #data부분을 4바이트씩 잘라서 파싱(파형 데이터의 경우 분석처리)
-        # data : 0040 2000 0000으로 나눠서 00+40+2000+0000으로 처리 
-        for i in range(0, len(data), 4):
-            if i + 4 > len(data): # 80
-                break
-            byte1 = data[i]
-            byte2 = data[i + 1]
-            fixed_value = int.from_bytes(data[i + 2:i + 4], byteorder="big") # 빅-엔디안 방식
-            real_value = byte1 + byte2 + fixed_value
-            data_values.append(real_value)
+            elif received_cmd == 0x42:  # NIBP 데이터
+                logger.info(f"[{sensor_type}] NIBP 데이터 파싱 로직 실행")
+                systolic = int.from_bytes(raw_data_bytes[3:5], byteorder="big")  # 수축기 혈압
+                diastolic = int.from_bytes(raw_data_bytes[5:7], byteorder="big")  # 이완기 혈압
+                return [systolic, diastolic]
 
-        logger.info(f"[{sensor_type}] 파싱된 데이터 값 수: {len(data_values)}")
-        return data_values
+            elif received_cmd == 0xa2:  # TEMP 데이터
+                logger.info(f"[{sensor_type}] TEMP 데이터 파싱 로직 실행")
+                temp = int.from_bytes(raw_data_bytes[3:5], byteorder="big") / 100.0  # 소수점 포함
+                return [temp]
+
+            else:
+                logger.warning(f"[{sensor_type}] 10바이트 패킷이지만 알 수 없는 cmd 값: {received_cmd}")
+                return []
+
+        elif packet_length == 86:
+            if received_cmd == 0x12:  # ECG 데이터
+                logger.info(f"[{sensor_type}] ECG 데이터 파싱 로직 실행")
+                data = raw_data_bytes[3:-1]
+                data_values = []
+                for i in range(0, len(data), 4):
+                    byte1 = data[i]
+                    byte2 = data[i + 1]
+                    fixed_value = int.from_bytes(data[i + 2:i + 4], byteorder="big")
+                    real_value = byte1 + byte2 + fixed_value
+                    data_values.append(real_value)
+                return data_values
+
+            elif received_cmd == 0x22:  # EMG 데이터
+                logger.info(f"[{sensor_type}] EMG 데이터 파싱 로직 실행")
+                data = raw_data_bytes[3:-1]
+                data_values = []
+                for i in range(0, len(data), 4):
+                    byte1 = data[i]
+                    byte2 = data[i + 1]
+                    fixed_value = int.from_bytes(data[i + 2:i + 4], byteorder="big")
+                    real_value = byte1 + byte2 + fixed_value
+                    data_values.append(real_value)
+                return data_values
+
+            elif received_cmd == 0x32:  # EOG 데이터
+                logger.info(f"[{sensor_type}] EOG 데이터 파싱 로직 실행")
+                data = raw_data_bytes[3:-1]
+                data_values = []
+                for i in range(0, len(data), 4):
+                    byte1 = data[i]
+                    byte2 = data[i + 1]
+                    fixed_value = int.from_bytes(data[i + 2:i + 4], byteorder="big")
+                    real_value = byte1 + byte2 + fixed_value
+                    data_values.append(real_value)
+                return data_values
+
+            elif received_cmd == 0x82:  # GSR 데이터
+                logger.info(f"[{sensor_type}] GSR 데이터 파싱 로직 실행")
+                data = raw_data_bytes[3:-1]
+                data_values = []
+                for i in range(0, len(data), 4):
+                    byte1 = data[i]
+                    byte2 = data[i + 1]
+                    fixed_value = int.from_bytes(data[i + 2:i + 4], byteorder="big")
+                    real_value = byte1 + byte2 + fixed_value
+                    data_values.append(real_value)
+                return data_values
+
+            elif received_cmd == 0x62:  # Airflow 데이터
+                logger.info(f"[{sensor_type}] Airflow 데이터 파싱 로직 실행")
+                data = raw_data_bytes[3:-1]
+                data_values = []
+                for i in range(0, len(data), 4):
+                    byte1 = data[i]
+                    byte2 = data[i + 1]
+                    fixed_value = int.from_bytes(data[i + 2:i + 4], byteorder="big")
+                    real_value = byte1 + byte2 + fixed_value
+                    data_values.append(real_value)
+                return data_values
+
+            else:
+                logger.warning(f"[{sensor_type}] 86바이트 패킷이지만 알 수 없는 cmd 값: {received_cmd}")
+                return []
+
+        else:
+            logger.warning(f"[{sensor_type}] 잘못된 패킷 길이: {packet_length} (10 또는 86 예상)")
+            return []
 
     except Exception as e:
         logger.error(f"[{sensor_type}] 데이터 파싱 중 오류 발생: {e}")
         return []
+
+
+
 
 # WebSocket 처리 함수
 @receive_and_parsing_router.websocket("/ws/{username}/{sensor_type}")
