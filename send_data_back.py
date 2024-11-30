@@ -13,7 +13,7 @@ SENSOR_URL_MAPPING = {
     "temp": "https://example.com/api/temp",
 }
 
-async def send_data_to_backend(deivce_id, username, sensor_type, data_queue):
+async def send_data_to_backend(username, sensor_type, data_queue):
     """
     센서 데이터를 백엔드로 전송하는 함수.
     
@@ -38,12 +38,11 @@ async def send_data_to_backend(deivce_id, username, sensor_type, data_queue):
 
     # Payload 생성
     payload = {
-        "device_id": device_id,
         "userid": username,
         f"{sensor_type}data": list(data_queue)
     }
     # Payload 생성 로그
-    logger.debug(f"device_id: {payload['device_id']}")
+    #logger.debug(f"device_id: {payload['device_id']}")
     logger.debug(f"userId: {payload['userid']}")
     #logger.debug(f"userId: {payload['userId']}")
     #logger.debug(f"Payload 생성됨: {json.dumps(payload, indent=2)}")
