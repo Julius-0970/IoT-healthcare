@@ -173,6 +173,7 @@ async def handle_websocket(sensor_type: str, username: str, websocket: WebSocket
     :param websocket: WebSocket 연결 객체
     """
     await websocket.accept()
+    logger.info(f"[{sensor_type}] WebSocket 연결 수락됨 (사용자: {username}).")
 
     try:
         # 클라이언트로부터 device_id 수신
