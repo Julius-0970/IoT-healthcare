@@ -49,7 +49,7 @@ async def send_data_to_backend(device_id, username, sensor_type, data):
             # Payload 생성
             payload = {
                 "device_id": device_id,
-                "userid": username,
+                "userId": username,
                 "systolic": nibp_values[0] + 10,
                 "diastolic": nibp_values[-1]
             }
@@ -57,7 +57,7 @@ async def send_data_to_backend(device_id, username, sensor_type, data):
             # Payload 생성
             payload = {
                 "device_id": device_id,
-                "userid": username,
+                "userId": username,
                 f"{sensor_type}data": payload_data
             }
     else:
@@ -65,18 +65,16 @@ async def send_data_to_backend(device_id, username, sensor_type, data):
         # Payload 생성
         payload = {
             "device_id": device_id,
-            "userid": username,
+            "userId": username,
             f"{sensor_type}data": single_data
         }
 
     # Payload 생성 로그
-    logger.debug(f"device_id: {payload['device_id']}, userid: {payload['userid']}")
-    # , Payload: {payload}
+    logger.debug(f"device_id: {payload['device_id']}, userId: {payload['userId']}, Payload: {payload}")
 
     try:
         async with httpx.AsyncClient() as client:
             response = await client.post(backend_url, json=payload)
-
             if response.status_code == 200:
                 # 성공 로그 및 처리
                 logger.info(f"{sensor_type} 데이터 전송 성공")
@@ -88,13 +86,13 @@ async def send_data_to_backend(device_id, username, sensor_type, data):
                     logger.info(f"{sensor_type} 큐 데이터 초기화 완료")
                 else:
                     logger.info(f"단일 값({payload_data})이므로 초기화 생략.")
-
+                
                 # 성공 응답 반환
                 return {"status": "success", "message": "데이터 전송 성공", "server_response": response.text}
             else:
                 # 실패 로그 및 처리
                 logger.error(f"{sensor_type} 데이터 전송 실패: {response.status_code}, 응답: {response.text}")
-
+                
                 # 실패 응답 반환
                 return {
                     "status": "failure",
@@ -105,7 +103,7 @@ async def send_data_to_backend(device_id, username, sensor_type, data):
     except Exception as e:
         # 예외 처리
         logger.error(f"{sensor_type} 데이터 전송 중 오류 발생: {e}")
-
+        
         # 실패 응답 반환
         return {
             "status": "error",
