@@ -103,7 +103,7 @@ async def websocket_ecg(websocket: WebSocket):
                 # 큐가 가득 찼을 때 데이터 전송
                 if len(ecg_data_queue) == ecg_data_queue.maxlen:
                     logger.info("WebSocket 연결 종료: 큐가 최대 용량에 도달했습니다.")
-                    backend_response = await send_data_to_backend(username, "ecg", list(ecg_data_queue))
+                    backend_response = await send_data_to_backend(device_id, username, "ecg", list(ecg_data_queue))
                     """
                     if backend_response["status"] == "success":
                         await websocket.send_text("ECG data successfully sent to backend.")
