@@ -16,14 +16,14 @@ logger = get_logger("sensor_logger")
 
 # 센서별 설정 (필요한 센서만 추가)
 SENSOR_CONFIGS = {
-    "ecg": {"cmd": 0x12, "data_size": 0x50, "queue_size": 15000},
-    "emg": {"cmd": 0x22, "data_size": 0x50, "queue_size": 15000},
-    "eog": {"cmd": 0x32, "data_size": 0x50, "queue_size": 15000},
-    "gsr": {"cmd": 0x82, "data_size": 0x50, "queue_size": 15000},
-    "airflow": {"cmd": 0x62, "data_size": 0x50, "queue_size": 15000},
-    "temp": {"cmd": 0xa2, "data_size": 0x04, "queue_size": 60},
-    "nibp": {"cmd": 0x42, "data_size": 0x04, "queue_size": 1},
-    "spo2": {"cmd": 0x52, "data_size": 0x04, "queue_size": 10},
+    'ecg': {"cmd": 0x12, "data_size": 0x50, "queue_size": 15000},
+    'emg': {"cmd": 0x22, "data_size": 0x50, "queue_size": 15000},
+    'eog': {"cmd": 0x32, "data_size": 0x50, "queue_size": 15000},
+    'gsr': {"cmd": 0x82, "data_size": 0x50, "queue_size": 15000},
+    'airflow': {"cmd": 0x62, "data_size": 0x50, "queue_size": 15000},
+    'temp': {"cmd": 0xa2, "data_size": 0x04, "queue_size": 60},
+    'nibp': {"cmd": 0x42, "data_size": 0x04, "queue_size": 1},
+    'spo2': {"cmd": 0x52, "data_size": 0x04, "queue_size": 10},
     # 추가 센서 설정 가능
     # 아직 temp, spo2, nibp 로직 미구현
 }
