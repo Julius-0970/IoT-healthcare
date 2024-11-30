@@ -226,10 +226,13 @@ async def handle_websocket(sensor_type: str, username: str, websocket: WebSocket
                     backend_response = await send_to_data_backend(device_id, username, sensor_type, list(user_queue))
                     logger.info(f"백엔드 응답: {backend_response}")
 
+                    # 큐 초기화
+                    user_queue.clear()
+                    logger.info(f"[{sensor_type}] 큐 초기화 완료")
+
                     # WebSocket 응답 처리
                     if backend_response["status"] == "success":
-                        del user_queues[username]
-                        logger.info(f"[{sensor_type}] 데이터 전송 성공, 큐 초기화 완료")
+                        logger.info(f"[{sensor_type}] 데이터 전송 성공")
                         break
                         """
                         await websocket.send_json({
@@ -239,8 +242,7 @@ async def handle_websocket(sensor_type: str, username: str, websocket: WebSocket
                         })
                         """
                     elif backend_response["status"] == "failure":
-                        del user_queues[username]
-                        logger.error(f"[{sensor_type}] 데이터 전송 실패, 큐 초기화 완료")
+                        logger.error(f"[{sensor_type}] 데이터 전송 실패")
                         break
                         """
                         await websocket.send_json({
@@ -251,25 +253,30 @@ async def handle_websocket(sensor_type: str, username: str, websocket: WebSocket
                         })
                         """
                     else:
+                        logger.error(f"[{sensor_type}] 알 수 없는 응답, 연결 종료")
+                        break
+                        """
                         await websocket.send_json({
                             "status": "error",
                             "message": f"{sensor_type.upper()} 데이터 전송 중 오류 발생",
                             "error_details": backend_response.get("error_details", "N/A")
                         })
-                    # 클라이언트와의 통신을 끊음.
-                    await websocket.close(code=1000, reason="Queue reached maximum capacity")
-                    logger.info(f"사용자 {username}와의 연결 종료")
+                        """
             except WebSocketDisconnect:
                 logger.info(f"[{sensor_type}] WebSocket 연결 해제됨 (사용자: {username}).")
                 break
             except Exception as e:
                 logger.error(f"[{sensor_type}] 데이터 처리 중 오류 발생: {e}")
                 await websocket.send_text("Internal server error.")
+                break
     finally:
         # 사용자 큐 삭제
         if username in user_queues:
             del user_queues[username]
             logger.info(f"사용자 {username}의 큐 삭제됨.")
+            # 클라이언트와의 통신을 끊음.
+            await websocket.close(code=1000, reason="Queue reached maximum capacity")
+            logger.info(f"[{sensor_type}] WebSocket 연결 종료됨 (사용자: {username}).")
 
 # HTTP GET 엔드포인트 처리 함수
 @receive_and_parsing_router.get("/{username}/{sensor_type}")
