@@ -64,15 +64,15 @@ def parse_sensor_data(sensor_type, raw_data_hex):
                 logger.info(f"[{sensor_type}] SPO2 데이터 파싱 로직 실행")
                 data = raw_data_bytes[3:-1]
                 data_values = []
-                for i in range(0, len(data), 2):  # 2바이트씩 처리
-                    value = int.from_bytes(data[i:i+2], byteorder="big")
-                    data_values.append(value)
+                spo2 = raw_data_bytes[5]
+                data_values.append(spo2)
                 return data_values
 
             elif received_cmd == 0x42:  # NIBP 데이터
                 logger.info(f"[{sensor_type}] NIBP 데이터 파싱 로직 실행")
-                systolic = int.from_bytes(raw_data_bytes[3:5], byteorder="big")  # 수축기 혈압
-                diastolic = int.from_bytes(raw_data_bytes[5:7], byteorder="big")  # 이완기 혈압
+                # 수축기와 이완기 값만 반환
+                diastolic = int(raw_data_bytes[4])  # 5번째 바이트 (diastolic)
+                systolic = int(raw_data_bytes[5])   # 6번째 바이트 (systolic)
                 data_values.append(systolic)
                 data_values.append(diastolic)
                 return data_values
@@ -81,7 +81,7 @@ def parse_sensor_data(sensor_type, raw_data_hex):
                 logger.info(f"[{sensor_type}] TEMP 데이터 파싱 로직 실행")
                 high_byte = int.from_bytes(raw_data_bytes[3:5], byteorder="big")
                 low_byte = int.from_bytes(raw_data_bytes[5:7], byteorder="big")
-                temp_raw = high_byte + low_byte + 4 /100.0
+                temp_raw = (high_byte + low_byte + 4) /100.0
                 data_values.append(temp_raw)
                 return data_values
 
