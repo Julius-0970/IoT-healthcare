@@ -204,7 +204,7 @@ async def handle_websocket(sensor_type: str, username: str, websocket: WebSocket
                 if sensor_type not in user_queues[username]:
                     user_queues[username][sensor_type] = []
 
-                parsed_values = parse_sensor_data(raw_data_hex)
+                parsed_values = parse_sensor_data(sensor_type, raw_data_hex)
                 if parsed_values:
                     user_queue.extend(parsed_values)
                     logger.info(f"[{sensor_type}] {len(parsed_values)}개의 데이터가 저장되었습니다.")
