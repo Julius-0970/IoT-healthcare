@@ -228,18 +228,28 @@ async def handle_websocket(sensor_type: str, username: str, websocket: WebSocket
 
                     # WebSocket 응답 처리
                     if backend_response["status"] == "success":
+                        del user_queues[username]
+                        logger.info(f"[{sensor_type}] 데이터 전송 성공, 큐 초기화 완료")
+                        break
+                        """
                         await websocket.send_json({
                             "status": "success",
                             "message": f"{sensor_type.upper()} 데이터 전송 성공",
                             "server_response": backend_response["server_response"]
                         })
+                        """
                     elif backend_response["status"] == "failure":
+                        del user_queues[username]
+                        logger.error(f"[{sensor_type}] 데이터 전송 실패, 큐 초기화 완료")
+                        break
+                        """
                         await websocket.send_json({
                             "status": "failure",
                             "message": f"{sensor_type.upper()} 데이터 전송 실패",
                             "error_code": backend_response.get("error_code", "N/A"),
                             "server_response": backend_response["server_response"]
                         })
+                        """
                     else:
                         await websocket.send_json({
                             "status": "error",
