@@ -1,7 +1,7 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from collections import deque
 from logger import get_logger
-from send_data_back import send_data_to_backend
+from send_to_data_back import send_to_data_backend
 import asyncio
 from functools import partial
 from collections import defaultdict
@@ -212,7 +212,7 @@ async def handle_websocket(sensor_type: str, username: str, websocket: WebSocket
 
                 # 파싱된 데이터 큐에 다 찼을 경우, 데이터 전송
                 if len(user_queue) == user_queue.maxlen:
-                    backend_response = await send_data_to_backend(device_id, username, sensor_type, list(user_queue))
+                    backend_response = await send_to_data_backend(device_id, username, sensor_type, list(user_queue))
                     logger.info(f"백엔드 응답: {backend_response}")
 
                     # WebSocket 응답 처리
