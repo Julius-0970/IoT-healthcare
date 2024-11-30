@@ -96,6 +96,8 @@ def parse_sensor_data(sensor_type, raw_data_hex):
                 data = raw_data_bytes[3:-1]
                 data_values = []
                 for i in range(0, len(data), 4):
+                    if i + 4 > len(data):
+                        break
                     byte1 = data[i]
                     byte2 = data[i + 1]
                     fixed_value = int.from_bytes(data[i + 2:i + 4], byteorder="big")
@@ -108,6 +110,8 @@ def parse_sensor_data(sensor_type, raw_data_hex):
                 data = raw_data_bytes[3:-1]
                 data_values = []
                 for i in range(0, len(data), 4):
+                    if i + 4 > len(data):
+                        break
                     byte1 = data[i]
                     byte2 = data[i + 1]
                     fixed_value = int.from_bytes(data[i + 2:i + 4], byteorder="big")
