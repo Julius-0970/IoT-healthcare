@@ -49,7 +49,7 @@ async def send_data_to_backend(device_id, username, sensor_type, data):
             # Payload 생성
             payload = {
                 "device_id": device_id,
-                "userId": username,
+                "userid": username,
                 "systolic": nibp_values[0] + 10,
                 "diastolic": nibp_values[-1]
             }
@@ -57,7 +57,7 @@ async def send_data_to_backend(device_id, username, sensor_type, data):
             # Payload 생성
             payload = {
                 "device_id": device_id,
-                "userId": username,
+                "userid": username,
                 f"{sensor_type}data": payload_data
             }
     else:
@@ -65,12 +65,12 @@ async def send_data_to_backend(device_id, username, sensor_type, data):
         # Payload 생성
         payload = {
             "device_id": device_id,
-            "userId": username,
+            "userid": username,
             f"{sensor_type}data": single_data
         }
 
     # Payload 생성 로그
-    logger.debug(f"device_id: {payload['device_id']}, userId: {payload['userId']}")
+    logger.debug(f"device_id: {payload['device_id']}, userid: {payload['userId']}")
 
     try:
         async with httpx.AsyncClient() as client:
