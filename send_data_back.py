@@ -43,7 +43,7 @@ async def send_data_to_backend(username, sensor_type, data_queue):
     }
     # Payload 생성 로그
     #logger.debug(f"device_id: {payload['device_id']}")
-    logger.debug(f"userId: {payload['userid']}")
+    logger.debug(f"userid: {payload['userid']}")
     #logger.debug(f"userId: {payload['userId']}")
     #logger.debug(f"Payload 생성됨: {json.dumps(payload, indent=2)}")
 
