@@ -73,12 +73,17 @@ def parse_sensor_data(sensor_type, raw_data_hex):
                 logger.info(f"[{sensor_type}] NIBP 데이터 파싱 로직 실행")
                 systolic = int.from_bytes(raw_data_bytes[3:5], byteorder="big")  # 수축기 혈압
                 diastolic = int.from_bytes(raw_data_bytes[5:7], byteorder="big")  # 이완기 혈압
-                return [systolic, diastolic]
+                data_values.append(systolic)
+                data_values.append(diastolic)
+                return data_values
 
             elif received_cmd == 0xa2:  # TEMP 데이터
                 logger.info(f"[{sensor_type}] TEMP 데이터 파싱 로직 실행")
-                temp = int.from_bytes(raw_data_bytes[3:5], byteorder="big") / 100.0  # 소수점 포함
-                return [temp]
+                high_byte = int.from_bytes(raw_data_bytes[3:5], byteorder="big")
+                low_byte = int.from_bytes(raw_data_bytes[5:7], byteorder="big")
+                temp_raw = high_byte + low_byte + 4 /100.0
+                data_values.append(temp_raw)
+                return data_values
 
             else:
                 logger.warning(f"[{sensor_type}] 10바이트 패킷이지만 알 수 없는 cmd 값: {received_cmd}")
@@ -157,9 +162,6 @@ def parse_sensor_data(sensor_type, raw_data_hex):
         logger.error(f"[{sensor_type}] 데이터 파싱 중 오류 발생: {e}")
         return []
 
-
-
-
 # WebSocket 처리 함수
 @receive_and_parsing_router.websocket("/ws/{username}/{sensor_type}")
 async def handle_websocket(sensor_type: str, username: str, websocket: WebSocket):
@@ -170,12 +172,15 @@ async def handle_websocket(sensor_type: str, username: str, websocket: WebSocket
     :param websocket: WebSocket 연결 객체
     """
     await websocket.accept()
-    logger.info(f"[{sensor_type}] WebSocket 연결 수락됨 (사용자: {username}).")
 
     try:
-        # 장치 ID 수신
+        # 클라이언트로부터 device_id 수신
         device_id = await websocket.receive_text()
-        logger.info(f"[{sensor_type}] 수신된 장비 ID: {device_id}, 사용자: {username}")
+        logger.info(f"수신된 장비 mac 정보: {device_id}")
+
+        # 클라이언트로부터 username 수신
+        username = await websocket.receive_text()
+        logger.info(f"수신된 사용자 이름: {username}")
 
         # 사용자별 센서 큐 생성
         if username not in user_queues:
@@ -188,15 +193,23 @@ async def handle_websocket(sensor_type: str, username: str, websocket: WebSocket
         while True:
             try:
                 # 데이터 수신 및 파싱
-                raw_data_hex = (await websocket.receive_bytes()).hex()
-                parsed_values = parse_sensor_data(sensor_type, raw_data_hex)
+                data = await websocket.receive_bytes()
+                raw_data_hex = data.hex()
+                logger.debug(f"수신된 데이터: {raw_data_hex}")
 
+                # 사용자 및 센서 타입에 대한 큐가 존재하는지 확인, 초기화
+                if username not in user_queues:
+                    user_queues[username] = {}
+                if sensor_type not in user_queues[username]:
+                    user_queues[username][sensor_type] = []
+
+                parsed_values = parse_sensor_data(raw_data_hex)
                 if parsed_values:
                     user_queue.extend(parsed_values)
                     logger.info(f"[{sensor_type}] {len(parsed_values)}개의 데이터가 저장되었습니다.")
                     await websocket.send_text(f"파싱 성공: {len(parsed_values)} {sensor_type.upper()} 데이터")
 
-                # 파싱된 데이터 큐에 추가
+                # 파싱된 데이터 큐에 다 찼을 경우, 데이터 전송
                 if len(user_queue) == user_queue.maxlen:
                     backend_response = await send_data_to_backend(device_id, username, sensor_type, list(user_queue))
                     logger.info(f"백엔드 응답: {backend_response}")
