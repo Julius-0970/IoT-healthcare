@@ -7,14 +7,16 @@ from functools import partial
 from collections import defaultdict
 import requests
 
-
-# FastAPI 애플리케이션과 연결하는 라우터 지정
+# FastAPI 애플리케이션과 연결하는 라우터 생성
 receive_and_parsing_router = APIRouter()
 
 # 공통 로깅 설정
 logger = get_logger("sensor_logger")
 
-# 센서별 설정 (필요한 센서만 추가)
+# 센서별 설정 정의
+# cmd: 센서 타입에 따른 명령어 값
+# data_size: 데이터 크기 (바이트 단위)
+# queue_size: 사용자별 큐 크기
 SENSOR_CONFIGS = {
     'ecg': {"cmd": 0x12, "data_size": 0x50, "queue_size": 15000},
     'emg': {"cmd": 0x22, "data_size": 0x50, "queue_size": 15000},
@@ -24,22 +26,25 @@ SENSOR_CONFIGS = {
     'temp': {"cmd": 0xa2, "data_size": 0x04, "queue_size": 60},
     'nibp': {"cmd": 0x42, "data_size": 0x04, "queue_size": 1},
     'spo2': {"cmd": 0x52, "data_size": 0x04, "queue_size": 10},
-    # 추가 센서 설정 가능
-    # 아직 temp, spo2, nibp 로직 미구현
 }
 
-# 사용자별 센서별 큐 저장
+# 사용자별 센서 큐 저장
+# 사용자별 데이터 큐를 저장하는 구조로 defaultdict를 사용
 user_queues = defaultdict(lambda: {})
 
 # 공통 파싱 함수
 def parse_sensor_data(sensor_type, raw_data_hex):
     """
     센서 데이터를 파싱하는 공통 함수.
+
+    :param sensor_type: 센서 유형 (예: ecg, emg 등)
+    :param raw_data_hex: 센서로부터 수신된 데이터 (16진수 문자열)
+    :return: 파싱된 데이터 리스트
     """
     try:
         # 들어온 패킷 데이터를 바이트로 변환
         raw_data_bytes = bytes.fromhex(raw_data_hex)
-        # 길이 측정
+        # 패킷 길이 계산
         packet_length = len(raw_data_bytes)
 
         # 센서 설정 가져오기
@@ -47,134 +52,58 @@ def parse_sensor_data(sensor_type, raw_data_hex):
         cmd = config["cmd"]
         data_size = config["data_size"]
 
-        # 패킷의 sop, cmd, data size, eop 데이터 부분을 제외한 부분들을 검증
-        sop = raw_data_bytes[0]
-        received_cmd = raw_data_bytes[1]
-        received_data_size = raw_data_bytes[2]
-        eop = raw_data_bytes[-1]
+        # 패킷의 sop, cmd, data size, eop 데이터 검증
+        sop = raw_data_bytes[0]  # 패킷 시작값 (SOP)
+        received_cmd = raw_data_bytes[1]  # 명령어 값 (CMD)
+        received_data_size = raw_data_bytes[2]  # 데이터 크기
+        eop = raw_data_bytes[-1]  # 패킷 끝값 (EOP)
 
-        # sop는 f7, eop는 fa, cmd 그리고 data size는 SENSOR_CONFIGS에 맞게 검증
+        # SOP와 EOP 값 검증
         if sop != 0xF7 or eop != 0xFA:
             logger.error(f"[{sensor_type}] 패킷 헤더/트레일러 불일치")
             return []
 
-        # CMD 검증 (센서 타입과 일치하는 cmd 값인지 확인)
+        # CMD 값 검증: 데이터가 센서 타입에 맞는 명령인지 확인
         if received_cmd != cmd:
-            logger.warning(f"[{sensor_type}] 잘못된 cmd 값 수신: {received_cmd} (예상 cmd: {expected_cmd})")
+            logger.warning(f"[{sensor_type}] 잘못된 cmd 값 수신: {received_cmd} (예상 cmd: {cmd})")
             return []
 
-        # 패킷 길이에 따른 처리
+        # 패킷 길이에 따른 데이터 처리
         if packet_length == 10:
-            if received_cmd == 0x52:  # SPO2 데이터
-                logger.info(f"[{sensor_type}] SPO2 데이터 파싱 로직 실행")
-                data_values = []
-                spo2 = raw_data_bytes[5]
-                data_values.append(spo2)
+            # 10바이트 데이터 처리 (정형 데이터: SPO2, NIBP 등)
+            if received_cmd == 0x52:  # SPO2 데이터 처리
+                data_values = [raw_data_bytes[5]]  # SPO2 값만 반환
                 return data_values
 
-            elif received_cmd == 0x42:  # NIBP 데이터
-                logger.info(f"[{sensor_type}] NIBP 데이터 파싱 로직 실행")
-                # 수축기와 이완기 값만 반환
-                data_values = []
-                diastolic = int(raw_data_bytes[4])  # 5번째 바이트 (diastolic)
-                systolic = int(raw_data_bytes[5])   # 6번째 바이트 (systolic)
-                data_values.append(systolic)
-                data_values.append(diastolic)
-                return data_values
+            elif received_cmd == 0x42:  # NIBP 데이터 처리
+                diastolic = raw_data_bytes[4]  # 이완기 혈압
+                systolic = raw_data_bytes[5]  # 수축기 혈압
+                return [systolic, diastolic]
 
-            elif received_cmd == 0xa2:  # TEMP 데이터
-                logger.info(f"[{sensor_type}] TEMP 데이터 파싱 로직 실행")
-                data_values = []
+            elif received_cmd == 0xa2:  # TEMP 데이터 처리
                 high_byte = int.from_bytes(raw_data_bytes[3:5], byteorder="big")
                 low_byte = int.from_bytes(raw_data_bytes[5:7], byteorder="big")
-                temp_raw = (high_byte + low_byte + 4) /100.0
-                data_values.append(temp_raw)
-                return data_values
+                temp_raw = (high_byte + low_byte + 4) / 100.0  # 온도 계산
+                return [temp_raw]
 
             else:
                 logger.warning(f"[{sensor_type}] 10바이트 패킷이지만 알 수 없는 cmd 값: {received_cmd}")
                 return []
 
         elif packet_length == 86:
-            if received_cmd == 0x12:  # ECG 데이터
-                logger.info(f"[{sensor_type}] ECG 데이터 파싱 로직 실행")
-                data = raw_data_bytes[3:-1]
-                data_values = []
-                for i in range(0, len(data), 4):
-                    if i + 4 > len(data):
-                        break
-                    byte1 = data[i]
-                    byte2 = data[i + 1]
-                    fixed_value = int.from_bytes(data[i + 2:i + 4], byteorder="big")
-                    real_value = byte1 + byte2 + fixed_value
-                    data_values.append(real_value)
-                return data_values
-
-            elif received_cmd == 0x22:  # EMG 데이터
-                logger.info(f"[{sensor_type}] EMG 데이터 파싱 로직 실행")
-                data = raw_data_bytes[3:-1]
-                data_values = []
-                for i in range(0, len(data), 4):
-                    if i + 4 > len(data):
-                        break
-                    byte1 = data[i]
-                    byte2 = data[i + 1]
-                    fixed_value = int.from_bytes(data[i + 2:i + 4], byteorder="big")
-                    real_value = byte1 + byte2 + fixed_value
-                    data_values.append(real_value)
-                return data_values
-
-            elif received_cmd == 0x32:  # EOG 데이터
-                logger.info(f"[{sensor_type}] EOG 데이터 파싱 로직 실행")
-                data = raw_data_bytes[3:-1]
-                data_values = []
-                for i in range(0, len(data), 4):
-                    if i + 4 > len(data):
-                        break
-                    byte1 = data[i]
-                    byte2 = data[i + 1]
-                    fixed_value = int.from_bytes(data[i + 2:i + 4], byteorder="big")
-                    real_value = byte1 + byte2 + fixed_value
-                    data_values.append(real_value)
-                return data_values
-
-            elif received_cmd == 0x82:  # GSR 데이터
-                logger.info(f"[{sensor_type}] GSR 데이터 파싱 로직 실행")
-                data = raw_data_bytes[3:-1]
-                data_values = []
-                for i in range(0, len(data), 4):
-                    if i + 4 > len(data):
-                        break
-                    byte1 = data[i]
-                    byte2 = data[i + 1]
-                    fixed_value = int.from_bytes(data[i + 2:i + 4], byteorder="big")
-                    real_value = byte1 + byte2 + fixed_value
-                    data_values.append(real_value)
-                return data_values
-
-            elif received_cmd == 0x62:  # Airflow 데이터
-                logger.info(f"[{sensor_type}] AIRFLOW 데이터 파싱 로직 실행")
-                data = raw_data_bytes[3:-1]
-                data_values = []
-                for i in range(0, len(data), 2):
-                    if i + 2 > len(data):
-                        break
-                    byte1 = int.from_bytes(data[i:i + 2], byteorder="big")  # 00FF
-                    byte2 = int.from_bytes(data[i + 2:i + 4], byteorder="big")  # FF00
-                    real_value = byte1 + byte2
-                    # 값이 0xFFFF일 경우 -1로 치환
-                    if real_value == 65535:
-                        data_values.append(-1)
-                        return data_values
-                    data_values.append(real_value)
-                return data_values
-
-            else:
-                logger.warning(f"[{sensor_type}] 86바이트 패킷이지만 알 수 없는 cmd 값: {received_cmd}")
-                return []
+            # 86바이트 데이터 처리 (파형 데이터: ECG, EMG 등)
+            data = raw_data_bytes[3:-1]  # 데이터 본문 추출
+            data_values = []
+            for i in range(0, len(data), 4):  # 4바이트씩 데이터 처리
+                byte1 = data[i]
+                byte2 = data[i + 1]
+                fixed_value = int.from_bytes(data[i + 2:i + 4], byteorder="big")
+                real_value = byte1 + byte2 + fixed_value
+                data_values.append(real_value)
+            return data_values
 
         else:
-            logger.warning(f"[{sensor_type}] 잘못된 패킷 길이: {packet_length} (10 또는 86 예상)")
+            logger.warning(f"[{sensor_type}] 예상치 못한 패킷 길이: {packet_length}")
             return []
 
     except Exception as e:
@@ -185,24 +114,21 @@ def parse_sensor_data(sensor_type, raw_data_hex):
 @receive_and_parsing_router.websocket("/ws/{username}/{sensor_type}")
 async def handle_websocket(sensor_type: str, username: str, websocket: WebSocket):
     """
-    공통 WebSocket 처리 함수.
-    :param sensor_type: 센서 유형 (예: ecg, emg 등)
+    WebSocket을 통해 센서 데이터를 수신하고 처리하는 함수.
+
+    :param sensor_type: 센서 유형
     :param username: 사용자 이름
     :param websocket: WebSocket 연결 객체
     """
     await websocket.accept()
-    logger.info("WebSocket 연결 수락됨.")
+    logger.info(f"WebSocket 연결 수락됨: 사용자={username}, 센서={sensor_type}")
 
     try:
-        # 클라이언트로부터 device_id 수신
+        # 장치 ID 및 사용자 정보 수신
         device_id = await websocket.receive_text()
-        logger.info(f"수신된 장비 mac 정보: {device_id}")
+        logger.info(f"장치 ID 수신: {device_id}")
 
-        # 클라이언트로부터 username 수신
-        username = await websocket.receive_text()
-        logger.info(f"수신된 사용자 이름: {username}")
-
-        # 사용자별 센서 큐 생성
+        # 사용자별 센서 큐 생성 (필요 시)
         if username not in user_queues:
             user_queues[username] = {
                 sensor: deque(maxlen=SENSOR_CONFIGS[sensor]["queue_size"])
@@ -217,57 +143,33 @@ async def handle_websocket(sensor_type: str, username: str, websocket: WebSocket
                 raw_data_hex = data.hex()
                 logger.debug(f"수신된 데이터: {raw_data_hex}")
 
-                # 데이터 파싱
+                # 파싱된 데이터 큐에 추가
                 parsed_values = parse_sensor_data(sensor_type, raw_data_hex)
                 if parsed_values:
                     user_queue.extend(parsed_values)
-                    logger.info(f"[{sensor_type}] {len(parsed_values)}개의 데이터가 저장되었습니다.")
-                    await websocket.send_text(f"파싱 성공: {len(parsed_values)} {sensor_type.upper()} 데이터")
+                    await websocket.send_text(f"파싱 성공: {len(parsed_values)}개의 데이터 처리됨")
 
-                # 큐가 가득 찼을 경우, 백엔드로 데이터 전송
+                # 큐가 가득 찼을 경우 백엔드로 데이터 전송
                 if len(user_queue) == user_queue.maxlen:
-                    logger.info(f"[{sensor_type}] 큐가 최대 용량에 도달했습니다. 백엔드로 데이터 전송 시도.")
                     backend_response = await send_to_data_backend(device_id, username, sensor_type, list(user_queue))
-
-                    #큐 초기화
-                    user_queue.clear()
-                    logger.info(f"[{sensor_type}] 큐 초기화 완료")
-
-                    
-                    # WebSocket 응답 처리
-                    if backend_response.get("status_code") == 200:
-                        logger.info(f"[{sensor_type}] 데이터 전송 성공")
-                        await websocket.send_json({
-                            "status": "success",
-                            "message": f"{sensor_type.upper()} 데이터 전송 성공",
-                            "server_response": backend_response.get("server_response")
-                        })
-                    else:
-                        logger.error(f"[{sensor_type}] 데이터 전송 실패 - 상태 코드: {backend_response.get('status_code')}")
-                        await websocket.send_json({
-                            "status": "failure",
-                            "message": f"{sensor_type.upper()} 데이터 전송 실패",
-                            "error_code": backend_response.get("status_code", "N/A"),
-                            "server_response": backend_response.get("server_response", "N/A")
-                        })
-                    # 클라이언트와의 통신을 끊음.
-                    await websocket.close(code=1000, reason="Queue reached maximum capacity")
+                    user_queue.clear()  # 큐 초기화
+                    logger.info(f"[{sensor_type}] 백엔드로 데이터 전송 완료")
             except WebSocketDisconnect:
-                logger.warning(f"[{sensor_type}] WebSocket 연결 끊김 (사용자: {username}).")
+                logger.info(f"WebSocket 연결 종료: 사용자={username}, 센서={sensor_type}")
                 break
             except Exception as e:
-                logger.error(f"[{sensor_type}] WebSocket 처리 중 오류 발생: {e}")
+                logger.error(f"WebSocket 처리 중 오류 발생: {e}")
                 break
     finally:
-        # 큐 삭제 및 자원 정리
         user_queues[username][sensor_type].clear()
-        logger.info(f"[{sensor_type}] 큐 삭제 완료 (사용자: {username}).")
+        logger.info(f"[{sensor_type}] 큐 초기화 완료: 사용자={username}")
 
-# HTTP GET 엔드포인트 처리 함수
+# HTTP GET 엔드포인트
 @receive_and_parsing_router.get("/{username}/{sensor_type}")
 async def get_sensor_data(sensor_type: str, username: str):
     """
-    공통 HTTP GET 처리 함수.
+    HTTP GET 요청을 통해 센서 데이터를 조회.
+
     :param sensor_type: 센서 유형
     :param username: 사용자 이름
     :return: 센서 데이터 큐 상태
@@ -280,11 +182,7 @@ async def get_sensor_data(sensor_type: str, username: str):
         "data": list(user_queues[username][sensor_type]),
     }
 
-# 라우터 등록
+# 센서별 경로 등록
 for sensor_type in SENSOR_CONFIGS.keys():
-    # WebSocket 경로를 등록
     receive_and_parsing_router.websocket(f"/ws/{{username}}/{sensor_type}")(partial(handle_websocket, sensor_type))
-    logger.info(f"WebSocket 경로 등록: /ws/{{username}}/{sensor_type}")
-    # HTTP GET 경로를 등록
-    receive_and_parsing_router.get(f"{{username}}/{sensor_type}")(partial(get_sensor_data, sensor_type))
-    logger.info(f"HTTP GET 경로 등록: {{username}}/{sensor_type}")
+    receive_and_parsing_router.get(f"/{username}/{sensor_type}")(partial(get_sensor_data, sensor_type))
