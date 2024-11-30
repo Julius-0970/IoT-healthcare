@@ -58,6 +58,11 @@ def parse_sensor_data(sensor_type, raw_data_hex):
             logger.error(f"[{sensor_type}] 패킷 헤더/트레일러 불일치")
             return []
 
+        # CMD 검증 (센서 타입과 일치하는 cmd 값인지 확인)
+        if received_cmd != cmd:
+            logger.warning(f"[{sensor_type}] 잘못된 cmd 값 수신: {received_cmd} (예상 cmd: {expected_cmd})")
+            return []
+
         # 패킷 길이에 따른 처리
         if packet_length == 10:
             if received_cmd == 0x52:  # SPO2 데이터
