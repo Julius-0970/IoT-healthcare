@@ -1,6 +1,18 @@
+# 비동기 post 요청.(메인은 post 요청)
 import httpx
-import json  # JSON 확인을 위한 모듈 추가
-from logger import get_logger  # 별도의 로깅 설정 가져오기
+# httpx: HTTP 클라이언트를 비동기 방식으로 제공하는 Python 라이브러리.
+# - 목적: 비동기 방식으로 http POST 요청을 백엔드에 전달하기 위함.
+
+# json 형식으로 데이터셋을 맞추기
+import json
+# json: JSON형식으로 payload 생성 모듈
+# - 목적: 큐에 쌓인 데이터의 저장과 결과 도출을 위해 json방식으로 보내야하기에.
+
+# 사용자 정의 로깅 설정 가져오기
+from logger import get_logger
+# - get_logger: 프로젝트에서 공통적으로 사용할 로깅 설정 함수
+#   목적: 테스트 환경에서 실제로 값에 대한 로그 출력을 위함. 
+
 
 logger = get_logger("back_data_sender")
 
@@ -26,6 +38,8 @@ async def send_to_data_backend(device_id, username, sensor_type, data):
     :param sensor_type: 센서 종류 (예: 'ecg', 'gsr', 'spo2' 등)
     :param data: 전송할 데이터 단일 데이터 혹은 큐(리스트)
     """
+
+    # 사용자 정보가 없을 경우, 처리 X
     if not username:
         logger.warning("사용자 이름이 설정되지 않았습니다.")
         return
@@ -44,7 +58,7 @@ async def send_to_data_backend(device_id, username, sensor_type, data):
     logger.debug(f"선택된 서버 URL: {backend_url}")
     
    # Payload 생성
-    # nibp를 측정하는 데 필요한 속성의 수가 2개로 지정되어 있어서 payload가 다름. 
+    # nibp를 측정하는 데 필요한 속성의 수가 2개로 지정되어 있어서 payload가 다름. 별도의 양식 사용.
     if sensor_type == "nibp":
         # NIBP 데이터는 항상 수축기와 이완기 쌍으로 전송
         payload = {
