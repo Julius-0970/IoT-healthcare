@@ -337,4 +337,4 @@ for sensor_type in SENSOR_CONFIGS.keys():
     receive_and_parsing_router.websocket(f"/ws/{{username}}/{sensor_type}")(partial(handle_websocket, sensor_type))
     # HTTP GET 경로를 등록
     # partial을 사용하여 `get_sensor_data` 함수에 센서 타입(`sensor_type`)을 고정 인자로 전달.
-    receive_and_parsing_router.get(f"/{{username}}/{sensor_type}")(partial(get_sensor_data, sensor_type))
+    receive_and_parsing_router.get(f"/{username}/{sensor_type}")(partial(get_sensor_data, sensor_type))
