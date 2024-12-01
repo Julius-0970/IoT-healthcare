@@ -40,7 +40,7 @@ async def send_to_data_backend(device_id, username, sensor_type, data):
     """
 
     # 사용자 정보가 없을 경우, 처리 X
-    if not (device_id:
+    if not device_id:
         logger.warning("장비에 대한 정보가 없습니다.")
         return
 
