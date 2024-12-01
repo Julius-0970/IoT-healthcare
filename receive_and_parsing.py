@@ -56,8 +56,8 @@ SENSOR_CONFIGS = {
     'eog': {"cmd": 0x32, "data_size": 0x50, "queue_size": 15000},
     'gsr': {"cmd": 0x82, "data_size": 0x50, "queue_size": 15000},
     'airflow': {"cmd": 0x62, "data_size": 0x50, "queue_size": 15000},
-    'temp': {"cmd": 0xa2, "data_size": 0x04, "queue_size": 60}, #temp는 장비의 문제로 인해, 오래 연결이 안됨. 큐의 길이의 경우 50~60으로 받아오는 게 적합함.
-    'nibp': {"cmd": 0x42, "data_size": 0x04, "queue_size": 1},
+    'temp': {"cmd": 0xa2, "data_size": 0x04, "queue_size": 60}, 
+    'nibp': {"cmd": 0x42, "data_size": 0x04, "queue_size": 2},
     'spo2': {"cmd": 0x52, "data_size": 0x04, "queue_size": 10},
 }
 
@@ -267,7 +267,8 @@ async def handle_websocket(sensor_type: str, username: str, websocket: WebSocket
                 if parsed_values:
                     user_queue.extend(parsed_values) # 파싱된 데이터를 사용자 큐에 추가
                     logger.info(f"[{sensor_type}] {len(parsed_values)}개의 데이터가 저장되었습니다.")
-                    await websocket.send_text(f"파싱 성공: {len(parsed_values)} {sensor_type.upper()} 데이터")
+                    # 서버 로그에 이미 출력이 되기도 하고, 작은 화면에서의 로그 출력은 큰 의미가 없음.
+                    # await websocket.send_text(f"파싱 성공: {len(parsed_values)} {sensor_type.upper()} 데이터")
 
                 # 큐가 가득 찼을 경우, 백엔드로 데이터 전송
                 if len(user_queue) == user_queue.maxlen:
@@ -276,7 +277,6 @@ async def handle_websocket(sensor_type: str, username: str, websocket: WebSocket
                     backend_response = await send_to_data_backend(device_id, username, sensor_type, list(user_queue))
 
                     # WebSocket 응답 처리
-
                     # 200메세지 반환시
                     if backend_response.get("status_code") == 200:
                         logger.info(f"[{sensor_type}] 데이터 전송 성공")
