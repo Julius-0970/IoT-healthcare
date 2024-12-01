@@ -40,6 +40,11 @@ async def send_to_data_backend(device_id, username, sensor_type, data):
     """
 
     # 사용자 정보가 없을 경우, 처리 X
+    if not (device_id:
+        logger.warning("장비에 대한 정보가 없습니다.")
+        return
+
+    # 사용자 정보가 없을 경우, 처리 X
     if not username:
         logger.warning("사용자 이름이 설정되지 않았습니다.")
         return
@@ -67,6 +72,14 @@ async def send_to_data_backend(device_id, username, sensor_type, data):
             "systolic": data[0], # 수축기
             "diastolic": data[1] # 이완기
         }
+    elif sensor_type in ['spo2', 'temp']:
+        # SPO2와 TEMP 데이터는 리스트의 마지막 값만 전송
+        payload = {
+            "device_id": device_id,
+            "userid": username,
+            f"{sensor_type}data": data[-1] # list의 마지막값만 전송
+        }
+        
     else:
         # 다른 센서 데이터 처리(일반적으로 보내는 데이터 속성이 1개인 센서 값)
         payload = {
@@ -77,6 +90,8 @@ async def send_to_data_backend(device_id, username, sensor_type, data):
     
     # Payload 생성 로그
     logger.debug(f"device_id: {payload['device_id']}, userid: {payload['userid']}")
+
+    
     response = None  # response를 초기화
     try:
         async with httpx.AsyncClient() as client:
