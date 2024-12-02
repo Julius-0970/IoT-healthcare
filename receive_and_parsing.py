@@ -276,27 +276,6 @@ async def handle_websocket(sensor_type: str, username: str, websocket: WebSocket
                     # 백엔드로 파싱된 데이터를 보내토록 함수를 호출하는 로직
                     backend_response = await send_to_data_backend(device_id, username, sensor_type, list(user_queue))
 
-                    # WebSocket 응답 처리
-                    # 200메세지 반환시
-                    if backend_response.get("status_code") == 200:
-                        logger.info(f"[{sensor_type}] 데이터 전송 성공")
-                        # 라즈베리파이에게 전송 성공 메세지를 반환.
-                        await websocket.send_json({
-                            "status": "success",
-                            "message": f"{sensor_type.upper()} 데이터 전송 성공",
-                            "server_response": backend_response.get("server_response")
-                        })
-                    # error code가 반환시
-                    else:
-                        logger.error(f"[{sensor_type}] 데이터 전송 실패 - 상태 코드: {backend_response.get('status_code')}")
-                        # 라즈베리파이에게 전송 실패 메세지를 반환. 
-                        # 여기서 유효하지 않은 ID라고 메세지가 오는 경우에는 클라이언트에서 ID오류를 반환하게 만들 수 있음.
-                        await websocket.send_json({
-                            "status": "failure",
-                            "message": f"{sensor_type.upper()} 데이터 전송 실패",
-                            "error_code": backend_response.get("status_code", "N/A"),
-                            "server_response": backend_response.get("server_response", "N/A")
-                        })
                     # 클라이언트와의 통신을 끊음.
                     await websocket.close(code=1000, reason="Queue reached maximum capacity")
             except WebSocketDisconnect:
