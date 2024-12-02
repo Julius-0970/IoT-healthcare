@@ -101,37 +101,17 @@ async def send_to_data_backend(device_id, username, sensor_type, data):
             logger.info(f"HTTP 상태 코드: {response.status_code}")
             logger.info(f"서버 응답 메시지: {response.text}")
             
-            # 응답 반환
-            return {
-                "status_code": response.status_code,
-                "server_response": response.text
-            }
 
     except httpx.HTTPStatusError as http_err:
         # HTTP 상태 코드 에러 (응답 있음)
         logger.error(f"HTTP 에러 발생: {http_err.response.status_code}, 응답: {http_err.response.text}")
-        return {
-            "status": "failure",
-            "message": "HTTP 에러 발생",
-            "error_code": http_err.response.status_code,
-            "server_response": http_err.response.text,
-        }
 
     except httpx.RequestError as req_err:
         # 요청 실패 (연결 문제 등)
         logger.error(f"요청 실패: {req_err}")
         # 상태 코드와 서버 응답 메시지 로그
-        return {
-            "status": "failure",
-            "message": "요청 실패",
-            "error_details": str(req_err),
-        }
 
     except Exception as e:
         # 기타 예외
         logger.error(f"예상치 못한 오류 발생: {e}")
-        return {
-            "status": "error",
-            "message": "예상치 못한 오류 발생",
-            "error_details": str(e),
-        }
+
