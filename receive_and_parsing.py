@@ -126,7 +126,7 @@ def parse_sensor_data(sensor_type, raw_data_hex):
                 data_values = []
                 high_byte = int.from_bytes(raw_data_bytes[3:5], byteorder="big")
                 low_byte = int.from_bytes(raw_data_bytes[5:7], byteorder="big")
-                temp_raw = (high_byte + low_byte /100.0) + 4 # temp 형식을 float로 처리.
+                temp_raw = ((high_byte + low_byte)/100.0) + 4 # temp 형식을 float로 처리.
                 data_values.append(temp_raw)
                 return data_values
 
