@@ -176,6 +176,14 @@ WebSocket 연결 직후 클라이언트는 `device_id` → `username` 순서로 
 ```
 
 <br>
-🔧 개선점
-문제위치개선 방향연결 끊김 시 잔여 데이터 유실receive_and_parsing.py finally큐에 데이터가 남아있으면 연결 종료 전 강제 전송, 장기적으로 Redis 중간 저장 도입백엔드 URL 하드코딩send_to_data_back.py SENSOR_URL_MAPPING.env 파일로 분리, 운영 환경에서 ngrok 제거 후 고정 도메인 + HTTPS 적용세션 종료 후 메모리 미반환receive_and_parsing.py user_queuesclear() 이후 user_queues 딕셔너리에서 키 자체도 삭제인증 없는 WebSocket · CORS 전체 개방main.py, receive_and_parsing.pyWebSocket 연결 시 JWT 토큰 검증 추가, CORS 허용 도메인 명시
+ 
+## 🔧 개선점
+ 
+| 문제 | 위치 | 개선 방향 |
+|------|------|----------|
+| 연결 끊김 시 잔여 데이터 유실 | `receive_and_parsing.py` `finally` | 큐에 데이터가 남아있으면 연결 종료 전 강제 전송, 장기적으로 Redis 중간 저장 도입 |
+| 백엔드 URL 하드코딩 | `send_to_data_back.py` `SENSOR_URL_MAPPING` | `.env` 파일로 분리, 운영 환경에서 ngrok 제거 후 고정 도메인 + HTTPS 적용 |
+| 세션 종료 후 메모리 미반환 | `receive_and_parsing.py` `user_queues` | `clear()` 이후 `user_queues` 딕셔너리에서 키 자체도 삭제 |
+| 인증 없는 WebSocket · CORS 전체 개방 | `main.py`, `receive_and_parsing.py` | WebSocket 연결 시 JWT 토큰 검증 추가, CORS 허용 도메인 명시 |
+ 
 <br>
