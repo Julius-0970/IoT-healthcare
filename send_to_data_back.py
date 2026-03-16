@@ -18,14 +18,14 @@ logger = get_logger("back_data_sender")
 
 # 서버 URL 매핑 테이블(실제 데이터를 받는 url, ngrok으로 뚫어둠)
 SENSOR_URL_MAPPING = {
-    "ecg": "https://reptile-promoted-publicly.ngrok-free.app/ws/ecg",
-    "eog": "https://reptile-promoted-publicly.ngrok-free.app/ws/eog",
-    "emg": "https://reptile-promoted-publicly.ngrok-free.app/ws/emg",
-    "gsr": "https://reptile-promoted-publicly.ngrok-free.app/ws/gsr",
-    "airflow": "https://reptile-promoted-publicly.ngrok-free.app/ws/airflow",
-    "temp": "https://reptile-promoted-publicly.ngrok-free.app/ws/bodytemp",
-    "nibp": "https://reptile-promoted-publicly.ngrok-free.app/ws/nibp",
-    "spo2": "https://reptile-promoted-publicly.ngrok-free.app/ws/spo2"
+    "ecg": f"{base_url}/ws/ecg",
+    "ecg": f"{base_url}/ws/ecg",
+    "emg": f"{base_url}/ws/emg",
+    "gsr": f"{base_url}/ws/gsr",
+    "airflow": f"{base_url}/ws/airflow",
+    "temp": f"{base_url}/ws/bodytemp",
+    "nibp": f"{base_url}/ws/nibp",
+    "spo2": f"{base_url}/ws/spo2"
 }
 
 # 백엔드로 파싱된 패킷을 리스트에 넣어 json으로 보내고, 응답을 받는 함수
