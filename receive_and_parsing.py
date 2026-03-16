@@ -104,11 +104,10 @@ def parse_sensor_data(sensor_type, raw_data_hex):
 
         # 패킷 길이 86 : ECG, EOG, EMG, GSR, AIRFLOW
         elif packet_length == 86:
-            data = raw_data_bytes[3:-1]
-            data_values = []
-
-            if received_cmd in [0x12, 0x22, 0x32, 0x82]:  # ECG, EMG, EOG, GSR — 동일 파싱
-                logger.info(f"[{sensor_type}] 데이터 파싱 로직 실행")
+            if received_cmd == 0x12:  # ECG 데이터
+                logger.info(f"[{sensor_type}] ECG 데이터 파싱 로직 실행")
+                data = raw_data_bytes[3:-1]
+                data_values = []
                 for i in range(0, len(data), 4):
                     if i + 4 > len(data):
                         break
@@ -119,15 +118,60 @@ def parse_sensor_data(sensor_type, raw_data_hex):
                     data_values.append(real_value)
                 return data_values
 
-            elif received_cmd == 0x62:  # AIRFLOW
-                logger.info(f"[{sensor_type}] AIRFLOW 데이터 파싱 로직 실행")
+            elif received_cmd == 0x22:  # EMG 데이터 (ECG와 동일)
+                logger.info(f"[{sensor_type}] EMG 데이터 파싱 로직 실행")
+                data = raw_data_bytes[3:-1]
+                data_values = []
                 for i in range(0, len(data), 4):
                     if i + 4 > len(data):
                         break
-                    byte1 = int.from_bytes(data[i:i + 2], byteorder="big")
-                    byte2 = int.from_bytes(data[i + 2:i + 4], byteorder="big")
+                    byte1 = data[i]
+                    byte2 = data[i + 1]
+                    fixed_value = int.from_bytes(data[i + 2:i + 4], byteorder="big")
+                    real_value = byte1 + byte2 + fixed_value
+                    data_values.append(real_value)
+                return data_values
+
+            elif received_cmd == 0x32:  # EOG 데이터 (ECG와 동일)
+                logger.info(f"[{sensor_type}] EOG 데이터 파싱 로직 실행")
+                data = raw_data_bytes[3:-1]
+                data_values = []
+                for i in range(0, len(data), 4):
+                    if i + 4 > len(data):
+                        break
+                    byte1 = data[i]
+                    byte2 = data[i + 1]
+                    fixed_value = int.from_bytes(data[i + 2:i + 4], byteorder="big")
+                    real_value = byte1 + byte2 + fixed_value
+                    data_values.append(real_value)
+                return data_values
+
+            elif received_cmd == 0x82:  # GSR 데이터 (ECG와 동일)
+                logger.info(f"[{sensor_type}] GSR 데이터 파싱 로직 실행")
+                data = raw_data_bytes[3:-1]
+                data_values = []
+                for i in range(0, len(data), 4):
+                    if i + 4 > len(data):
+                        break
+                    byte1 = data[i]
+                    byte2 = data[i + 1]
+                    fixed_value = int.from_bytes(data[i + 2:i + 4], byteorder="big")
+                    real_value = byte1 + byte2 + fixed_value
+                    data_values.append(real_value)
+                return data_values
+
+            elif received_cmd == 0x62:  # Airflow 데이터
+                logger.info(f"[{sensor_type}] AIRFLOW 데이터 파싱 로직 실행")
+                data = raw_data_bytes[3:-1]
+                data_values = []
+                for i in range(0, len(data), 4):
+                    if i + 4 > len(data):
+                        break
+                    byte1 = int.from_bytes(data[i:i + 2], byteorder="big")  # 00FF
+                    byte2 = int.from_bytes(data[i + 2:i + 4], byteorder="big")  # FF00
                     real_value = byte1 + byte2
-                    if real_value == 65535:  # 2의 보수 처리
+                    # 값이 0xFFFF일 경우 -1로 치환 (2의 보수 처리)
+                    if real_value == 65535:
                         data_values.append(-1)
                         return data_values
                     data_values.append(real_value)
